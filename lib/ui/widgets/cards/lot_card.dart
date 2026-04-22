@@ -1,0 +1,298 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yastik_alti/ui/states/home_view_model.dart';
+import 'package:yastik_alti/ui/ui_models/lot_ui_model.dart';
+import 'package:yastik_alti/ui/theme/app_colors.dart';
+import 'package:yastik_alti/ui/theme/app_strings.dart';
+import 'package:yastik_alti/ui/theme/app_text_style.dart';
+import 'package:yastik_alti/ui/theme/app_dimens.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
+
+class LotCard extends ConsumerStatefulWidget {
+  final LotUiModel model;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  const LotCard({
+    super.key,
+    required this.model,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  @override
+  ConsumerState<LotCard> createState() => _LotCardState();
+}
+
+class _LotCardState extends ConsumerState<LotCard> {
+  bool _isExpanded = false;
+
+  void _toggle() {
+    setState(() => _isExpanded = !_isExpanded);
+  }
+
+  bool get _hasNote {
+    return widget.model.note != null && widget.model.note!.trim().isNotEmpty;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.model.isSellCard) {
+      return _buildSellSlip();
+    }
+
+    return AppOutlinedCard(
+      onTap: _toggle,
+      child: Column(
+        children: [
+          _buildHeader(context, ref),
+
+          if (_isExpanded) ...[
+            const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
+            Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: 1), // [DÜZELTİLDİ]
+            const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
+            _buildExpandedDetails(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSellSlip() {
+    return AppOutlinedCard(
+      borderColor: AppColors.lossAccent.withValues(alpha: AppAlphas.borderLight), // [DÜZELTİLDİ]
+      child: Row(
+        children: [
+          const Icon(Icons.remove_circle_outline, color: AppColors.lossAccent, size: 16),
+          const SizedBox(width: AppDimens.p8), // [DÜZELTİLDİ]
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${AppStrings.labels.sell.toUpperCase()} - ${widget.model.dateText}",
+                  style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 10),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _hasNote ? widget.model.note! : widget.model.assetName,
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "- ${widget.model.originalAmountText}",
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.lossAccent, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                widget.model.buyPriceText,
+                style: AppTextStyles.caption.copyWith(fontSize: 10),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    final isRealizedMode = ref.watch(homeViewModelProvider.select((value) => value.isRealizedMode));
+
+    final pnlText = isRealizedMode ? widget.model.totalRealizedPnl : widget.model.currentUnrealizedPnl;
+    final pnlColor = isRealizedMode ? widget.model.realizedColor : widget.model.unrealizedColor;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 80,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_hasNote) ...[
+                Text(
+                  widget.model.note!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+              ],
+              Text(
+                widget.model.dateText,
+                style: AppTextStyles.caption.copyWith(color: AppColors.textMuted, fontSize: 10),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: AppDimens.p8), // [DÜZELTİLDİ]
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "${widget.model.originalAmountText} ${widget.model.assetName}",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                widget.model.totalCostText,
+                style: AppTextStyles.caption.copyWith(fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (pnlText != null)
+              Text(
+                pnlText,
+                style: AppTextStyles.bodyMedium.copyWith(color: pnlColor, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+            const SizedBox(height: 2),
+            Text(
+              widget.model.profitPercent,
+              style: AppTextStyles.caption.copyWith(color: pnlColor?.withValues(alpha: AppAlphas.textSecondary) ?? AppColors.textMuted, fontSize: 10), // [DÜZELTİLDİ]
+            ),
+          ],
+        ),
+
+        const SizedBox(width: AppDimens.p6), // [DÜZELTİLDİ]
+        Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: AppColors.textMuted, size: 18),
+      ],
+    );
+  }
+
+  Widget _buildExpandedDetails() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppDimens.p10), // [DÜZELTİLDİ]
+          decoration: BoxDecoration(
+            color: AppColors.background.withValues(alpha: AppAlphas.overlay), // [DÜZELTİLDİ]
+            borderRadius: BorderRadius.circular(AppDimens.radiusSm), // [DÜZELTİLDİ]
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  AppStrings.labels.activeRemaining.toUpperCase(),
+                  widget.model.remainingAmountText,
+                  widget.model.currentUnrealizedPnl ?? "-",
+                  widget.model.unrealizedColor ?? AppColors.textPrimary,
+                ),
+              ),
+              Container(width: 1, height: 24, color: AppColors.textMuted.withValues(alpha: AppAlphas.bgMedium)), // [DÜZELTİLDİ]
+              Expanded(
+                child: _buildStatItem(
+                  AppStrings.labels.realizedSold.toUpperCase(),
+                  widget.model.soldAmountText,
+                  widget.model.totalRealizedPnl ?? "0 TL",
+                  widget.model.realizedColor ?? AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("${AppStrings.labels.buy}: ${widget.model.buyPriceText}", style: AppTextStyles.caption.copyWith(fontSize: 9)),
+                Text("${AppStrings.labels.avgCost}: ${widget.model.totalCostText}", style: AppTextStyles.caption.copyWith(fontSize: 9)),
+              ],
+            ),
+            const SizedBox(height: AppDimens.p4), // [DÜZELTİLDİ]
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppDimens.radiusXs), // [DÜZELTİLDİ]
+              child: LinearProgressIndicator(
+                value: widget.model.progressVal,
+                backgroundColor: AppColors.lossAccent.withValues(alpha: AppAlphas.bgMedium), // [DÜZELTİLDİ]
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.profitAccent),
+                minHeight: 4,
+              ),
+            ),
+          ],
+        ),
+
+        if (widget.model.allocations.isNotEmpty) ...[
+          const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
+          ...widget.model.allocations.map((sale) => Padding(
+            padding: const EdgeInsets.only(bottom: AppDimens.p6), // [DÜZELTİLDİ]
+            child: Row(
+              children: [
+                const Icon(Icons.subdirectory_arrow_right, color: AppColors.textMuted, size: 12),
+                const SizedBox(width: AppDimens.p6), // [DÜZELTİLDİ]
+                Text(sale.date, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+                const Spacer(),
+                Text("-${sale.amount}", style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 11)),
+                const SizedBox(width: AppDimens.p8), // [DÜZELTİLDİ]
+                SizedBox(
+                  width: 50,
+                  child: Text(
+                    sale.profitText,
+                    textAlign: TextAlign.end,
+                    style: AppTextStyles.captionBold.copyWith(color: sale.profitColor, fontSize: 11),
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+
+        const SizedBox(height: AppDimens.p4), // [DÜZELTİLDİ]
+        Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint)), // [DÜZELTİLDİ]
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            if (widget.onEdit != null)
+              TextButton.icon(
+                onPressed: widget.onEdit,
+                icon: const Icon(Icons.edit, size: 12, color: AppColors.textMuted),
+                label: Text(AppStrings.common.edit.toUpperCase(), style: AppTextStyles.caption.copyWith(fontSize: 10)),
+              ),
+            if (widget.onDelete != null)
+              TextButton.icon(
+                onPressed: widget.onDelete,
+                icon: const Icon(Icons.delete, size: 12, color: AppColors.textMuted),
+                label: Text(AppStrings.common.delete.toUpperCase(), style: AppTextStyles.caption.copyWith(fontSize: 10)),
+              ),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget _buildStatItem(String title, String subTitle, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppDimens.p6), // [DÜZELTİLDİ]
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: AppTextStyles.captionBold.copyWith(fontSize: 9)),
+          const SizedBox(height: 2),
+          Text(value, style: AppTextStyles.bodyLarge.copyWith(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(subTitle, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+}
