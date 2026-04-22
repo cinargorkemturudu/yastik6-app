@@ -1,0 +1,13 @@
+**/.git
+**/.idea
+**/.vscode
+**/bin/
+**/obj/
+**/logs/
+*.db
+*.db-wal
+*.db-shm
+.env
+http-client.private.env.json
+appsettings.Development.json
+.DS_Store
