@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'package:decimal/decimal.dart'; // [ADDED]
+import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/core/app_log.dart';
 import 'package:yastik_alti/di/providers.dart';
 import 'package:yastik_alti/domain/models/dtos/market_state.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_quote.dart';
-
 import '../../domain/assets/asset_catalog.dart';
 import '../../domain/models/entities/asset.dart';
 
@@ -24,29 +23,40 @@ class LivePriceNotifier extends AsyncNotifier<MarketState> {
       _timer?.cancel();
     });
 
+    final service = ref.read(priceServiceProvider);
+
+    // 1. ANINDA UI ÇİZİMİ İÇİN ÖNBELLEĞİ YÜKLE
+    final cachedQuotes = await service.getCachedAll();
+    if (cachedQuotes.isNotEmpty) {
+      AppLog.info('Loaded ${cachedQuotes.length} items from offline cache.', domain: 'STATE');
+      state = AsyncData(_buildMarketState(cachedQuotes));
+    }
+
+    // 2. ARKAPLANDA CANLI VERİ DÖNGÜSÜNÜ BAŞLAT
     _timer ??= Timer.periodic(const Duration(seconds: 20), (_) => _refresh());
 
+    // 3. İLK AĞ İSTEĞİNİ YAP
     return _fetchData();
   }
 
   Future<MarketState> _fetchData() async {
     final service = ref.read(priceServiceProvider);
-
     List<PriceQuote> quotes = await service.getLatestAll();
+    return _buildMarketState(quotes);
+  }
 
+  // Yardımcı metod: USD dönüşümlerini ve state oluşturmayı tek yerden yapar
+  MarketState _buildMarketState(List<PriceQuote> quotes) {
     PriceQuote? usdQuote;
     try {
       usdQuote = quotes.firstWhere((q) => q.assetCode == 'USD' || q.assetCode == 'USDTRY=X');
-    } catch (e, stack) {
+    } catch (e) {
       AppLog.error(
         'USD kuru bulunamadı! Yabancı varlıklar (Kripto, Ons) TL\'ye çevrilemeyecek.',
         domain: 'STATE',
-        error: e,
-        stackTrace: stack,
       );
     }
 
-    // [FIXED] Use Decimal.one instead of 1.0 to enforce strict typing
     final Decimal usdRate = usdQuote?.midPrice ?? Decimal.one;
 
     if (usdRate > Decimal.one) {
