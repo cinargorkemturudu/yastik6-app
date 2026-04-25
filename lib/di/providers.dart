@@ -27,34 +27,24 @@ import 'package:yastik_alti/domain/services/portfolio_service.dart';
 import 'package:yastik_alti/domain/services/price_service.dart';
 
 import '../core/env.dart';
+import '../data/local/market_cache_local.data.dart';
 
 // --- CORE INFRASTRUCTURE ---
 
-/// **Database Instance**
-///
-/// This provider throws an error by default because the database initialization
-/// is asynchronous and platform-dependent. It MUST be overridden in `main.dart`.
 final databaseProvider = Provider<Database>((ref) {
   throw UnimplementedError('Database must be overridden in main.dart');
 });
 
-/// **HTTP Client**
 final httpClientProvider = Provider<http.Client>((ref) {
   return http.Client();
 });
 
-/// **API Base URL**
-///
-/// [PROD UPDATE] Artık DuckDNS ve SSL (HTTPS) kullanıyoruz.
-/// Nginx sayesinde port belirtmemize gerek kalmadı (Varsayılan HTTPS: 443).
-/// Bu adres hem Android hem iOS hem de Web/Desktop için ortaktır.
 final baseUrlProvider = Provider<String>((ref) {
   return Env.baseUrl;
 });
 
 // --- DATA SOURCES ---
 
-/// **Remote Data Source (Harem API)**
 final remoteHaremDataProvider = Provider<RemoteMarketData>((ref) {
   final client = ref.watch(httpClientProvider);
   final baseUrl = ref.watch(baseUrlProvider);
@@ -69,12 +59,14 @@ final remoteHaremDataProvider = Provider<RemoteMarketData>((ref) {
 final assetLocalDataProvider = Provider((ref) => AssetLocalData());
 final transactionLocalDataProvider = Provider((ref) => TransactionLocalData());
 final allocationLocalDataProvider = Provider((ref) => AllocationLocalData());
+final marketCacheLocalDataProvider = Provider((ref) => MarketCacheLocalData()); // <-- YENİ EKLENDİ
 
 // --- REPOSITORIES ---
 
 final priceRepoProvider = Provider<PriceIRepository>((ref) {
   final remote = ref.watch(remoteHaremDataProvider);
-  return PriceRepo(remote);
+  final cache = ref.watch(marketCacheLocalDataProvider); // <-- YENİ EKLENDİ
+  return PriceRepo(remote, cache); // <-- GÜNCELLENDİ
 });
 
 final assetRepoProvider = Provider<AssetIRepository>((ref) {

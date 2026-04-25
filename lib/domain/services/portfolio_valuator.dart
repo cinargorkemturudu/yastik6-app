@@ -22,7 +22,8 @@ class PortfolioValuator {
       Decimal currentPrice = quote?.bid ?? Decimal.zero;
 
       if (currentPrice <= Decimal.zero) {
-        currentPrice = holding.avgCost;
+        // [FIXED] Fallback to the last known database price instead of average cost
+        currentPrice = holding.asset.currentPrice;
       }
 
       final currentValue = holding.totalAmount * currentPrice;
@@ -44,7 +45,7 @@ class PortfolioValuator {
           cost: lotCost,
           currentValue: lotValue,
           profit: lotProfit,
-          profitPct: lotPct.toDouble(), // [FIXED]
+          profitPct: lotPct.toDouble(),
         );
       }).toList();
 
@@ -56,7 +57,7 @@ class PortfolioValuator {
         costBasis: holding.totalCost,
         currentValue: currentValue,
         profit: profit,
-        profitPct: profitPct.toDouble(), 
+        profitPct: profitPct.toDouble(),
         lots: lotProfits,
       ));
 
@@ -72,7 +73,7 @@ class PortfolioValuator {
       totalCost: totalCost,
       totalValue: totalValue,
       totalProfit: totalProfit,
-      totalProfitPct: totalProfitPct.toDouble(), 
+      totalProfitPct: totalProfitPct.toDouble(),
     );
   }
 }

@@ -12,6 +12,10 @@ class PriceService {
     return _repo.getLatestAll();
   }
 
+  Future<List<PriceQuote>> getCachedAll() {
+    return _repo.getCachedAll();
+  }
+
   /// Grafik verisi (History Screen için)
   Future<List<PricePoint>> getHistory(String code, String range) {
     return _repo.getHistory(code, range);
