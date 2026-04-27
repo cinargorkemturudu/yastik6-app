@@ -1,32 +1,34 @@
 import 'package:intl/intl.dart';
 
 class AppFormatter {
-  // Statik değişkenler (Performans için)
   static final _dateFormat = DateFormat('dd.MM.yy');
-  
-  /// Para formatı: 1250.5 -> "1,250.50 TL"
+  static final _trFormat = NumberFormat('#,##0.00', 'tr_TR');
+  static final _trFormatNoDecimal = NumberFormat('#,##0', 'tr_TR');
+
   static String money(double value) {
-    return "${value.toStringAsFixed(2)} TL";
+    return "${_trFormat.format(value)} TL";
   }
 
+  // [DÜZELTİLDİ]: Orijinal 2 parametreli imza (signature) korundu.
+  // DÜZELTİLMİŞ HALİ (Sembol eklemesini kaldırdık, sadece sayıyı TR formatında dönüyor)
   static String amount(double value, String symbol) {
-    return value.toStringAsFixed(2);
+    return _trFormat.format(value);
   }
 
-  /// Yüzde formatı: 0.15 -> "%15.20"
   static String percent(double value) {
-    return "%${(value * 100).toStringAsFixed(2)}";
+    return "%${_trFormat.format(value * 100)}";
   }
 
-  /// [YENİ] Kar/Zarar Metni: 500 -> "+500 TL"
-  /// Artık Mapper'da "+" işaretiyle uğraşmaya gerek yok.
   static String pnlValue(double value) {
-    final prefix = value >= 0 ? '+' : '';
-    // Kar zarar genelde kuruşsuz daha net okunur, istersen .toStringAsFixed(2) yapabilirsin.
-    return "$prefix${value.toStringAsFixed(0)} TL";
+    final prefix = value > 0 ? '+' : '';
+    return "$prefix${_trFormatNoDecimal.format(value)} TL";
   }
 
-  /// Akıllı Tarih: "Salı" veya "24.01.24"
+  static String signedPercent(double value) {
+    final prefix = value > 0 ? '+' : '';
+    return "$prefix%${_trFormat.format(value * 100)}";
+  }
+
   static String date(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date).inDays;
@@ -44,9 +46,11 @@ class AppFormatter {
     }
     return _dateFormat.format(date);
   }
-
-  static String signedPercent(double value) {
-    final prefix = value > 0 ? '+' : '';
-    return "$prefix%${(value * 100).toStringAsFixed(2)}";
+  static String cleanAssetCode(String code) {
+    return code
+        .replaceAll('.IS', '')
+        .replaceAll('=X', '')
+        .replaceAll('TRY', '')
+        .replaceAll('-USD', '');
   }
 }

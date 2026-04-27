@@ -4,9 +4,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_point.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
-import 'package:yastik_alti/ui/theme/app_colors.dart'; // [EKLENDİ]
-import 'package:yastik_alti/ui/theme/app_dimens.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/theme/app_colors.dart';
+import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/utils/chart_data_smoother.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
 
 class ChartTransactionPoint {
   final DateTime date;
@@ -46,13 +47,12 @@ class AssetHistoryChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.isEmpty) {
       return Center(
-        child: Text(AppStrings.messages.emptyData, style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.bgMedium))), // [DÜZELTİLDİ]
+        child: Text(AppStrings.messages.emptyData, style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.bgMedium))),
       );
     }
     final rawSortedData = List<PricePoint>.from(data)..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final smoothData = ChartDataSmoother.processAndSmooth(rawSortedData, period: 3);
 
-    // Eğer filtre sonrası veri kalmadıysa (hepsi null/sıfır ise) boş ekran göster
     if (smoothData.isEmpty) {
       return Center(
         child: Text(AppStrings.messages.emptyData, style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.bgMedium))),
@@ -72,12 +72,10 @@ class AssetHistoryChart extends StatelessWidget {
     final startTime = smoothData.first.date.millisecondsSinceEpoch.toDouble();
     final endTime = smoothData.last.date.millisecondsSinceEpoch.toDouble();
 
-    // [DEĞİŞTİRİLEN KISIM BAŞLANGICI] - İşlemleri grafiğin aralığına göre filtreleyip tarihe göre (X ekseni) SIRALIYORUZ
     final visibleTxs = transactions.where((t) {
       final ms = t.date.millisecondsSinceEpoch.toDouble();
       return ms >= startTime && ms <= endTime;
     }).toList()..sort((a, b) => a.date.compareTo(b.date));
-    // [DEĞİŞTİRİLEN KISIM BİTİŞİ]
 
     final spots = smoothData.map((p) => FlSpot(p.date.millisecondsSinceEpoch.toDouble(), p.price)).toList();
 
@@ -93,7 +91,7 @@ class AssetHistoryChart extends StatelessWidget {
           show: true,
           drawVerticalLine: false,
           horizontalInterval: priceRange / 4,
-          getDrawingHorizontalLine: (value) => FlLine(color: Colors.white.withValues(alpha: AppAlphas.faint), strokeWidth: 1), // [DÜZELTİLDİ]
+          getDrawingHorizontalLine: (value) => FlLine(color: Colors.white.withValues(alpha: AppAlphas.faint), strokeWidth: 1),
         ),
         titlesData: FlTitlesData(
           show: true,
@@ -111,7 +109,7 @@ class AssetHistoryChart extends StatelessWidget {
                 final format = (selectedRange == 'Day') ? DateFormat('HH:mm') : DateFormat('dd MMM');
 
                 return Padding(
-                  padding: const EdgeInsets.only(top: AppDimens.p8), // [DÜZELTİLDİ]
+                  padding: const EdgeInsets.only(top: AppDimens.p8),
                   child: Text(format.format(date), style: const TextStyle(color: Colors.white54, fontSize: 10)),
                 );
               },
@@ -124,7 +122,8 @@ class AssetHistoryChart extends StatelessWidget {
               interval: priceRange / 4,
               getTitlesWidget: (value, meta) {
                 if (value <= minY || value >= maxY) return const SizedBox();
-                return Text(value.toStringAsFixed(1), style: const TextStyle(color: Colors.white54, fontSize: 10));
+                // [DÜZELTİLDİ]: 2 parametre gönderildi
+                return Text(AppFormatter.amount(value, ""), style: const TextStyle(color: Colors.white54, fontSize: 10));
               },
             ),
           ),
@@ -144,14 +143,15 @@ class AssetHistoryChart extends StatelessWidget {
                   alignment: Alignment.topRight,
                   padding: const EdgeInsets.only(right: AppDimens.p4, bottom: AppDimens.p4),
                   style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
-                  labelResolver: (_) => '${AppStrings.labels.avgShort}: ${avgCost!.toStringAsFixed(1)}',
+                  // [DÜZELTİLDİ]: 2 parametre gönderildi
+                  labelResolver: (_) => '${AppStrings.labels.avgShort}: ${AppFormatter.amount(avgCost!, "")}',
                 ),
               ),
             HorizontalLine(
               y: maxPrice,
               color: Colors.greenAccent.withValues(alpha: AppAlphas.bgMedium),
               strokeWidth: 1,
-              label: HorizontalLineLabel( // Burası düzeltildi! (İki label özelliği tek bir HorizontalLineLabel nesnesi içinde toplanmalı veya biri kaldırılmalıydı. Label bir nesnedir, parametre listesi değildir.)
+              label: HorizontalLineLabel(
                   show: true,
                   alignment: Alignment.bottomLeft,
                   style: TextStyle(color: Colors.greenAccent.withValues(alpha: AppAlphas.textSecondary), fontSize: 9),
@@ -162,7 +162,7 @@ class AssetHistoryChart extends StatelessWidget {
               y: minPrice,
               color: Colors.redAccent.withValues(alpha: AppAlphas.bgMedium),
               strokeWidth: 1,
-              label: HorizontalLineLabel( // Burası da düzeltildi!
+              label: HorizontalLineLabel(
                   show: true,
                   alignment: Alignment.topLeft,
                   style: TextStyle(color: Colors.redAccent.withValues(alpha: AppAlphas.textSecondary), fontSize: 9),
@@ -186,11 +186,10 @@ class AssetHistoryChart extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [color.withValues(alpha: AppAlphas.borderLight), color.withValues(alpha: 0.0)], // [DÜZELTİLDİ]
+                colors: [color.withValues(alpha: AppAlphas.borderLight), color.withValues(alpha: 0.0)],
               ),
             ),
           ),
-          // [DEĞİŞTİRİLEN KISIM BAŞLANGICI] - Pinleri çizen katmana sıralanmış olan visibleTxs listesini veriyoruz
           if (visibleTxs.isNotEmpty)
             LineChartBarData(
               spots: visibleTxs.map((t) => FlSpot(t.date.millisecondsSinceEpoch.toDouble(), t.price)).toList(),
@@ -210,7 +209,6 @@ class AssetHistoryChart extends StatelessWidget {
                 },
               ),
             ),
-          // [DEĞİŞTİRİLEN KISIM BİTİŞİ]
         ],
 
         lineTouchData: LineTouchData(
@@ -223,31 +221,31 @@ class AssetHistoryChart extends StatelessWidget {
             if (spot.barIndex == 0) {
               onScrub(PricePoint(
                 timestamp: DateTime.fromMillisecondsSinceEpoch(spot.x.toInt()),
-                  price: Decimal.parse(spot.y.toString()),
+                price: Decimal.parse(spot.y.toString()),
               ));
             }
           },
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => Colors.blueGrey.shade900.withValues(alpha: 0.95), // [DÜZELTİLDİ]
-            tooltipPadding: const EdgeInsets.all(AppDimens.p8), // [DÜZELTİLDİ]
+            getTooltipColor: (_) => Colors.blueGrey.shade900.withValues(alpha: 0.95),
+            tooltipPadding: const EdgeInsets.all(AppDimens.p8),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((LineBarSpot touchedSpot) {
 
                 if (touchedSpot.barIndex == 1) {
-                  // [DEĞİŞTİRİLEN KISIM BAŞLANGICI] - Tooltip tıklandığında doğru veriyi okuması için visibleTxs kullanıyoruz
                   final tx = visibleTxs[touchedSpot.spotIndex];
-                  // [DEĞİŞTİRİLEN KISIM BİTİŞİ]
                   final type = tx.isBuy ? AppStrings.labels.buy.toUpperCase() : AppStrings.labels.sell.toUpperCase();
 
                   String profitStr = '';
                   if (!tx.isBuy && tx.realizedProfit != null) {
                     final isProfit = tx.realizedProfit! >= 0;
                     final prefix = isProfit ? '+' : '';
-                    profitStr = '\nK/Z: $prefix₺${tx.realizedProfit!.toStringAsFixed(1)}';
+                    // [DÜZELTİLDİ]: 2 parametre gönderildi
+                    profitStr = '\nK/Z: $prefix₺${AppFormatter.amount(tx.realizedProfit!.abs(), "")}';
                   }
 
+                  // [DÜZELTİLDİ]: 2 parametre gönderildi
                   return LineTooltipItem(
-                    '$type\n₺${tx.price.toStringAsFixed(1)}\n${tx.amount} ${AppStrings.labels.units}$profitStr',
+                    '$type\n₺${AppFormatter.amount(tx.price, "")}\n${AppFormatter.amount(tx.amount, "")} ${AppStrings.labels.units}$profitStr',
                     TextStyle(
                       color: tx.isBuy ? Colors.greenAccent : Colors.redAccent,
                       fontWeight: FontWeight.bold,
@@ -258,7 +256,8 @@ class AssetHistoryChart extends StatelessWidget {
 
                 final date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
                 return LineTooltipItem(
-                  '₺${touchedSpot.y.toStringAsFixed(2)}\n',
+                  // [DÜZELTİLDİ]: 2 parametre gönderildi
+                  '₺${AppFormatter.amount(touchedSpot.y, "")}\n',
                   TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
                   children: [
                     TextSpan(

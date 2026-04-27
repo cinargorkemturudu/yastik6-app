@@ -1,7 +1,6 @@
-// lib/domain/models/value_objects/price_quote.dart
-
 import 'package:decimal/decimal.dart';
 import 'package:yastik_alti/domain/models/entities/asset.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
 
 class PriceQuote {
   final String assetCode;
@@ -10,8 +9,8 @@ class PriceQuote {
 
   final Decimal bid;
   final Decimal ask;
-  final String formattedBid;
-  final String formattedAsk;
+  String get formattedBid => AppFormatter.money(bid.toDouble());
+  String get formattedAsk => AppFormatter.money(ask.toDouble());
   final double changeRate; // Kept as double (Ratio)
   final DateTime asOf;
   final DateTime expiresAt;
@@ -22,8 +21,6 @@ class PriceQuote {
     required this.type,
     required this.bid,
     required this.ask,
-    required this.formattedBid,
-    required this.formattedAsk,
     required this.changeRate,
     required this.asOf,
     required this.expiresAt,
@@ -72,8 +69,6 @@ class PriceQuote {
       type: type,
       bid: convertedBid,
       ask: convertedAsk,
-      formattedBid: convertedBid.toDouble().toStringAsFixed(2),
-      formattedAsk: convertedAsk.toDouble().toStringAsFixed(2),
       changeRate: changeRate,
       asOf: asOf,
       expiresAt: expiresAt,

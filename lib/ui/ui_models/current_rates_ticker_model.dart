@@ -12,12 +12,9 @@ class CurrentRatesTickerModel {
 class TickerItemUiModel {
   final String assetCode;
   final String displayName;
-
   final Decimal bid;
   final Decimal ask;
-
   final DateTime asOf;
-
   final double changePercent;
   final bool isStale;
 
@@ -33,9 +30,17 @@ class TickerItemUiModel {
 
   bool get isPositive => changePercent >= 0;
 
-  String get formattedBid => AppFormatter.amount(bid.toDouble(), assetCode); // [FIXED]
-  String get formattedAsk => AppFormatter.amount(ask.toDouble(), assetCode); // [FIXED]
+  // PRESENTATION LOGIC: Centralized naming for the Ticker
+  String get displayTitle {
+    final cleanedCode = AppFormatter.cleanAssetCode(assetCode);
+    if (cleanedCode == assetCode && displayName.isNotEmpty) {
+      return displayName.toUpperCase();
+    }
+    return cleanedCode.toUpperCase();
+  }
 
+  String get formattedBid => AppFormatter.amount(bid.toDouble(), assetCode);
+  String get formattedAsk => AppFormatter.amount(ask.toDouble(), assetCode);
   String get formattedBidAsk => 'Al $formattedBid / Sat $formattedAsk';
 
   String get formattedChangePercent {

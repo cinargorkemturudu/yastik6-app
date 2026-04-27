@@ -1,5 +1,3 @@
-// lib/ui/widgets/cards/asset_accordion_item.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/ui/ui_models/owned_asset_list_item_model.dart';
@@ -9,7 +7,6 @@ import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
-
 import 'package:yastik_alti/ui/widgets/asset_history_chart.dart';
 import 'package:yastik_alti/ui/states/asset_history_provider.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_point.dart';
@@ -32,7 +29,6 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
   bool _isExpanded = false;
   PricePoint? _hoveredPoint;
 
-  // 1. Added State for Interactive Range
   String _selectedRange = '1M';
 
   void _toggle() {
@@ -41,7 +37,6 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
     });
   }
 
-  // 2. Extracted the exact range mapping logic from MarketItemDetailsSheet
   String _getRangeParam(String uiRange) {
     switch (uiRange) {
       case '1D': return 'Day';
@@ -53,7 +48,6 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
     }
   }
 
-  // 3. Extracted the exact chip builder logic
   Widget _buildRangeChip(String label, String rangeValue) {
     final isSelected = _selectedRange == rangeValue;
     return ChoiceChip(
@@ -72,6 +66,8 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
 
   @override
   Widget build(BuildContext context) {
+    // Mantık blokları (isStock, isMetal vs.) buradan tamamen kaldırıldı!
+
     return AppOutlinedCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -89,12 +85,20 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "${widget.model.amountText} ${widget.model.title}",
+                          // DOĞRUDAN MODELDEN OKUNUYOR
+                          "${widget.model.amountText} ${widget.model.displayTitle}",
                           style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w700, fontSize: 14),
                         ),
                         const SizedBox(height: 2),
                         Row(
                           children: [
+                            // DOĞRUDAN MODELDEN OKUNUYOR
+                            if (widget.model.displaySubtitle != null) ...[
+                              Text(widget.model.displaySubtitle!, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 11)),
+                              const SizedBox(width: 4),
+                              Container(width: 3, height: 3, decoration: const BoxDecoration(color: AppColors.textMuted, shape: BoxShape.circle)),
+                              const SizedBox(width: 4),
+                            ],
                             const Icon(Icons.show_chart, color: AppColors.textMuted, size: 12),
                             const SizedBox(width: AppDimens.p4),
                             Text(
@@ -160,7 +164,6 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
 
                   const SizedBox(height: AppDimens.p16),
 
-                  // 4. Integrated the Interactive Range Selector
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -176,11 +179,10 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                   const SizedBox(height: AppDimens.p16),
 
                   SizedBox(
-                    height: 140, // Slightly taller to accommodate the scrub text
+                    height: 140,
                     width: double.infinity,
                     child: Consumer(
                       builder: (context, ref, child) {
-                        // 5. Dynamic API Call based on selected chip
                         final params = AssetHistoryParams(
                             assetCode: widget.model.assetId,
                             range: _getRangeParam(_selectedRange)
@@ -208,9 +210,8 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                             return AssetHistoryChart(
                               data: data,
                               transactions: chartTxs,
-                              // 6. Fixed Color: Always use the proper brand color (e.g. Gold for Gold), never force Red
                               color: AppColors.getAssetColor(widget.model.assetId),
-                              selectedRange: _selectedRange, // Passes the dynamic range down
+                              selectedRange: _selectedRange,
                               onScrub: (point) {
                                 if (_hoveredPoint?.timestamp != point?.timestamp) {
                                   setState(() => _hoveredPoint = point);

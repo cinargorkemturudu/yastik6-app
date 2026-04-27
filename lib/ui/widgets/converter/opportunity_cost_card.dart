@@ -6,7 +6,11 @@ import 'package:yastik_alti/ui/states/asset_history_provider.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
-import 'package:yastik_alti/ui/theme/app_dimens.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/theme/app_dimens.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
+import 'package:yastik_alti/domain/models/entities/asset.dart';
+
+import '../../utils/app_safe_text.dart';
 
 class OpportunityCostCard extends ConsumerWidget {
   final double amount;
@@ -31,63 +35,20 @@ class OpportunityCostCard extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppDimens.radiusMd), // [DÜZELTİLDİ]
-        border: Border.all(color: AppColors.textPrimary.withValues(alpha: AppAlphas.hover)), // [DÜZELTİLDİ]
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.textPrimary.withValues(alpha: AppAlphas.hover)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppDimens.p16), // [DÜZELTİLDİ]
+        padding: const EdgeInsets.all(AppDimens.p16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- HEADER ---
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  AppStrings.converter.opportunityCost.toUpperCase(),
-                  style: AppTextStyles.captionBold.copyWith(
-                    color: AppColors.textMuted,
-                    fontSize: 11,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate ?? DateTime.now().subtract(const Duration(days: 30)),
-                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null) onDateSelected(picked);
-                  },
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today, size: 14, color: AppColors.brandBlue),
-                      const SizedBox(width: AppDimens.p4), // [DÜZELTİLDİ]
-                      Text(
-                        selectedDate != null
-                            ? DateFormat('dd.MM.yyyy').format(selectedDate!)
-                            : AppStrings.converter.selectDate,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.brandBlue,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
-
-            const SizedBox(height: AppDimens.p16), // [DÜZELTİLDİ]
-
-            // --- BODY ---
+            _buildHeader(context),
+            const SizedBox(height: AppDimens.p16),
             if (selectedDate == null)
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppDimens.p8), // [DÜZELTİLDİ]
+                  padding: const EdgeInsets.symmetric(vertical: AppDimens.p8),
                   child: Text(
                     AppStrings.messages.emptyPastDate,
                     style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textFaint),
@@ -102,6 +63,49 @@ class OpportunityCostCard extends ConsumerWidget {
     );
   }
 
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          AppStrings.converter.opportunityCost.toUpperCase(),
+          style: AppTextStyles.captionBold.copyWith(
+            color: AppColors.textMuted,
+            fontSize: 11,
+            letterSpacing: 1.0,
+          ),
+        ),
+        GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: selectedDate ?? DateTime.now().subtract(const Duration(days: 30)),
+              firstDate: DateTime.now().subtract(const Duration(days: 365)),
+              lastDate: DateTime.now(),
+            );
+            if (picked != null) onDateSelected(picked);
+          },
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 14, color: AppColors.brandBlue),
+              const SizedBox(width: AppDimens.p4),
+              Text(
+                selectedDate != null
+                    ? DateFormat('dd.MM.yyyy').format(selectedDate!)
+                    : AppStrings.converter.selectDate,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.brandBlue,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        )
+      ],
+    );
+  }
+
   Widget _buildAnalysisResult(WidgetRef ref) {
     final fromPriceAsync = ref.watch(historicalPriceProvider(HistoricalPriceParams(assetCode: fromAsset.assetCode, date: selectedDate!)));
     final toPriceAsync = ref.watch(historicalPriceProvider(HistoricalPriceParams(assetCode: toAsset.assetCode, date: selectedDate!)));
@@ -109,7 +113,7 @@ class OpportunityCostCard extends ConsumerWidget {
     if (fromPriceAsync.isLoading || toPriceAsync.isLoading) {
       return const Center(
         child: Padding(
-            padding: EdgeInsets.all(AppDimens.p16), // [DÜZELTİLDİ]
+            padding: EdgeInsets.all(AppDimens.p16),
             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandBlue)
         ),
       );
@@ -125,16 +129,27 @@ class OpportunityCostCard extends ConsumerWidget {
 
     double pastResult = amount * (pastFromPrice / pastToPrice);
     double netDiff = currentResult - pastResult;
-    double percentDiff = pastResult == 0 ? 0 : (netDiff / pastResult) * 100;
+    double percentDiff = pastResult == 0 ? 0 : (netDiff / pastResult);
 
     bool isProfit = percentDiff >= 0;
     Color trendColor = isProfit ? AppColors.profitAccent : AppColors.lossAccent;
 
+    String displayName;
+    switch (toAsset.type) {
+      case AssetType.stock:
+      case AssetType.metal:
+        displayName = toAsset.name;
+        break;
+      default:
+        displayName = AppFormatter.cleanAssetCode(toAsset.assetCode);
+        break;
+    }
+
     return Container(
-      padding: const EdgeInsets.all(AppDimens.p12), // [DÜZELTİLDİ]
+      padding: const EdgeInsets.all(AppDimens.p12),
       decoration: BoxDecoration(
-        color: AppColors.background.withValues(alpha: AppAlphas.overlay), // [DÜZELTİLDİ]
-        borderRadius: BorderRadius.circular(AppDimens.radiusSm), // [DÜZELTİLDİ]
+        color: AppColors.background.withValues(alpha: AppAlphas.overlay),
+        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,43 +158,53 @@ class OpportunityCostCard extends ConsumerWidget {
             AppStrings.converter.ifYouTradedThatDay,
             style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
           ),
-          const SizedBox(height: AppDimens.p4), // [DÜZELTİLDİ]
+          const SizedBox(height: AppDimens.p4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                pastResult.toStringAsFixed(4),
-                style: AppTextStyles.h2.copyWith(fontSize: 18),
-              ),
-              const SizedBox(width: AppDimens.p4), // [DÜZELTİLDİ]
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppDimens.p2), // [DÜZELTİLDİ]
+              // [DÜZELTİLDİ]: Büyük rakamların taşmasını önlemek için Flexible
+              Flexible(
                 child: Text(
-                  toAsset.assetCode,
+                  AppFormatter.amount(pastResult, ""),
+                  style: AppTextStyles.h2.copyWith(fontSize: 18),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: AppDimens.p4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppDimens.p2),
+                child: AppSafeText(
+                  displayName,
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                 ),
               ),
-              const SizedBox(width: AppDimens.p4), // [DÜZELTİLDİ]
+              const SizedBox(width: AppDimens.p4),
               Padding(
-                padding: const EdgeInsets.only(bottom: AppDimens.p2), // [DÜZELTİLDİ]
+                padding: const EdgeInsets.only(bottom: AppDimens.p2),
                 child: Text(AppStrings.converter.youWouldHaveReceived, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
               ),
             ],
           ),
-          const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
-          Container(height: 1, color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint)), // [DÜZELTİLDİ]
-          const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
+          const SizedBox(height: AppDimens.p12),
+          Container(height: 1, color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint)),
+          const SizedBox(height: AppDimens.p12),
           Row(
             children: [
               Icon(isProfit ? Icons.trending_up : Icons.trending_down, color: trendColor, size: 20),
-              const SizedBox(width: AppDimens.p6), // [DÜZELTİLDİ]
-              Text(
-                "${AppStrings.converter.difference} ${isProfit ? '+' : ''}${netDiff.toStringAsFixed(4)} (${isProfit ? '+' : ''}${percentDiff.toStringAsFixed(2)}%)",
-                style: AppTextStyles.bodyLarge.copyWith(color: trendColor, fontWeight: FontWeight.bold),
+              const SizedBox(width: AppDimens.p6),
+              // [DÜZELTİLDİ]: Kar/zarar oranının taşmasını önlemek için Flexible
+              Flexible(
+                child: Text(
+                  "${AppStrings.converter.difference} ${isProfit ? '+' : ''}${AppFormatter.amount(netDiff.abs(), "")} (${AppFormatter.signedPercent(percentDiff)})",
+                  style: AppTextStyles.bodyLarge.copyWith(color: trendColor, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: AppDimens.p8), // [DÜZELTİLDİ]
+          const SizedBox(height: AppDimens.p8),
           Text(
             AppStrings.converter.pastAnalysisDisclaimer,
             style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textFaint),

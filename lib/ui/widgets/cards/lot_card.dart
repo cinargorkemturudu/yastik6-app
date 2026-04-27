@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// REMOVED: asset.dart (AssetType is no longer needed here)
 import 'package:yastik_alti/ui/states/home_view_model.dart';
 import 'package:yastik_alti/ui/ui_models/lot_ui_model.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
-import 'package:yastik_alti/ui/theme/app_dimens.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
 
 class LotCard extends ConsumerStatefulWidget {
@@ -35,6 +36,8 @@ class _LotCardState extends ConsumerState<LotCard> {
     return widget.model.note != null && widget.model.note!.trim().isNotEmpty;
   }
 
+  // REMOVED: _mainTitle getter containing presentation logic
+
   @override
   Widget build(BuildContext context) {
     if (widget.model.isSellCard) {
@@ -48,9 +51,9 @@ class _LotCardState extends ConsumerState<LotCard> {
           _buildHeader(context, ref),
 
           if (_isExpanded) ...[
-            const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
-            Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: 1), // [DÜZELTİLDİ]
-            const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
+            const SizedBox(height: AppDimens.p12),
+            Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: 1),
+            const SizedBox(height: AppDimens.p12),
             _buildExpandedDetails(),
           ],
         ],
@@ -60,11 +63,11 @@ class _LotCardState extends ConsumerState<LotCard> {
 
   Widget _buildSellSlip() {
     return AppOutlinedCard(
-      borderColor: AppColors.lossAccent.withValues(alpha: AppAlphas.borderLight), // [DÜZELTİLDİ]
+      borderColor: AppColors.lossAccent.withValues(alpha: AppAlphas.borderLight),
       child: Row(
         children: [
           const Icon(Icons.remove_circle_outline, color: AppColors.lossAccent, size: 16),
-          const SizedBox(width: AppDimens.p8), // [DÜZELTİLDİ]
+          const SizedBox(width: AppDimens.p8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,7 +78,8 @@ class _LotCardState extends ConsumerState<LotCard> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _hasNote ? widget.model.note! : widget.model.assetName,
+                  // DELEGATED LOGIC: Consuming pre-formatted displayTitle from model
+                  _hasNote ? widget.model.note! : widget.model.displayTitle,
                   style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 13),
                 ),
               ],
@@ -132,14 +136,15 @@ class _LotCardState extends ConsumerState<LotCard> {
           ),
         ),
 
-        const SizedBox(width: AppDimens.p8), // [DÜZELTİLDİ]
+        const SizedBox(width: AppDimens.p8),
 
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "${widget.model.originalAmountText} ${widget.model.assetName}",
+                // DELEGATED LOGIC: Consuming pre-formatted displayTitle from model
+                "${widget.model.originalAmountText} ${widget.model.displayTitle}",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 13),
@@ -164,12 +169,12 @@ class _LotCardState extends ConsumerState<LotCard> {
             const SizedBox(height: 2),
             Text(
               widget.model.profitPercent,
-              style: AppTextStyles.caption.copyWith(color: pnlColor?.withValues(alpha: AppAlphas.textSecondary) ?? AppColors.textMuted, fontSize: 10), // [DÜZELTİLDİ]
+              style: AppTextStyles.caption.copyWith(color: pnlColor?.withValues(alpha: AppAlphas.textSecondary) ?? AppColors.textMuted, fontSize: 10),
             ),
           ],
         ),
 
-        const SizedBox(width: AppDimens.p6), // [DÜZELTİLDİ]
+        const SizedBox(width: AppDimens.p6),
         Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: AppColors.textMuted, size: 18),
       ],
     );
@@ -180,10 +185,10 @@ class _LotCardState extends ConsumerState<LotCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(AppDimens.p10), // [DÜZELTİLDİ]
+          padding: const EdgeInsets.all(AppDimens.p10),
           decoration: BoxDecoration(
-            color: AppColors.background.withValues(alpha: AppAlphas.overlay), // [DÜZELTİLDİ]
-            borderRadius: BorderRadius.circular(AppDimens.radiusSm), // [DÜZELTİLDİ]
+            color: AppColors.background.withValues(alpha: AppAlphas.overlay),
+            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
           ),
           child: Row(
             children: [
@@ -195,7 +200,7 @@ class _LotCardState extends ConsumerState<LotCard> {
                   widget.model.unrealizedColor ?? AppColors.textPrimary,
                 ),
               ),
-              Container(width: 1, height: 24, color: AppColors.textMuted.withValues(alpha: AppAlphas.bgMedium)), // [DÜZELTİLDİ]
+              Container(width: 1, height: 24, color: AppColors.textMuted.withValues(alpha: AppAlphas.bgMedium)),
               Expanded(
                 child: _buildStatItem(
                   AppStrings.labels.realizedSold.toUpperCase(),
@@ -208,7 +213,7 @@ class _LotCardState extends ConsumerState<LotCard> {
           ),
         ),
 
-        const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
+        const SizedBox(height: AppDimens.p12),
 
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,12 +225,12 @@ class _LotCardState extends ConsumerState<LotCard> {
                 Text("${AppStrings.labels.avgCost}: ${widget.model.totalCostText}", style: AppTextStyles.caption.copyWith(fontSize: 9)),
               ],
             ),
-            const SizedBox(height: AppDimens.p4), // [DÜZELTİLDİ]
+            const SizedBox(height: AppDimens.p4),
             ClipRRect(
-              borderRadius: BorderRadius.circular(AppDimens.radiusXs), // [DÜZELTİLDİ]
+              borderRadius: BorderRadius.circular(AppDimens.radiusXs),
               child: LinearProgressIndicator(
                 value: widget.model.progressVal,
-                backgroundColor: AppColors.lossAccent.withValues(alpha: AppAlphas.bgMedium), // [DÜZELTİLDİ]
+                backgroundColor: AppColors.lossAccent.withValues(alpha: AppAlphas.bgMedium),
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.profitAccent),
                 minHeight: 4,
               ),
@@ -234,17 +239,17 @@ class _LotCardState extends ConsumerState<LotCard> {
         ),
 
         if (widget.model.allocations.isNotEmpty) ...[
-          const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
+          const SizedBox(height: AppDimens.p12),
           ...widget.model.allocations.map((sale) => Padding(
-            padding: const EdgeInsets.only(bottom: AppDimens.p6), // [DÜZELTİLDİ]
+            padding: const EdgeInsets.only(bottom: AppDimens.p6),
             child: Row(
               children: [
                 const Icon(Icons.subdirectory_arrow_right, color: AppColors.textMuted, size: 12),
-                const SizedBox(width: AppDimens.p6), // [DÜZELTİLDİ]
+                const SizedBox(width: AppDimens.p6),
                 Text(sale.date, style: AppTextStyles.caption.copyWith(fontSize: 10)),
                 const Spacer(),
                 Text("-${sale.amount}", style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 11)),
-                const SizedBox(width: AppDimens.p8), // [DÜZELTİLDİ]
+                const SizedBox(width: AppDimens.p8),
                 SizedBox(
                   width: 50,
                   child: Text(
@@ -258,8 +263,8 @@ class _LotCardState extends ConsumerState<LotCard> {
           )),
         ],
 
-        const SizedBox(height: AppDimens.p4), // [DÜZELTİLDİ]
-        Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint)), // [DÜZELTİLDİ]
+        const SizedBox(height: AppDimens.p4),
+        Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint)),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -283,7 +288,7 @@ class _LotCardState extends ConsumerState<LotCard> {
 
   Widget _buildStatItem(String title, String subTitle, String value, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimens.p6), // [DÜZELTİLDİ]
+      padding: const EdgeInsets.symmetric(horizontal: AppDimens.p6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
