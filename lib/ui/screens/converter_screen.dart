@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_quote.dart';
+import 'package:yastik_alti/domain/models/entities/asset.dart';
 import 'package:yastik_alti/ui/states/converter_view_model.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/utils/asset_visual_mapper.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/converter/market_mode_toggle.dart';
 import 'package:yastik_alti/ui/widgets/converter/opportunity_cost_card.dart';
 import 'package:yastik_alti/ui/widgets/inputs/app_amount_input_field.dart';
 import 'package:yastik_alti/ui/widgets/universal_asset_picker_sheet.dart';
+
+import '../utils/app_safe_text.dart';
 
 class ConverterScreen extends ConsumerStatefulWidget {
   const ConverterScreen({super.key});
@@ -54,7 +58,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
     ref.listen(converterViewModelProvider, (prev, next) {
       if (prev?.amount != next.amount) {
         final currentTextValue = Decimal.tryParse(_sellAmountCtrl.text.replaceAll(',', '.')) ?? Decimal.zero;
-
         if (currentTextValue != next.amount) {
           final newString = next.amount > Decimal.zero ? next.amount.toString() : '';
           _sellAmountCtrl.value = TextEditingValue(
@@ -87,7 +90,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                 toAsset: state.toAsset,
               ),
               const SizedBox(height: AppDimens.p24),
-
               _buildAssetCard(
                 context, ref,
                 title: AppStrings.converter.sellAsset,
@@ -97,7 +99,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                 onAmountChanged: (val) => viewModel.updateAmount(Decimal.tryParse(val.replaceAll(',', '.')) ?? Decimal.zero),
                 onAssetSelected: viewModel.updateFromAsset,
               ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppDimens.p8),
                 child: Center(
@@ -107,7 +108,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                   ),
                 ),
               ),
-
               _buildAssetCard(
                 context, ref,
                 title: AppStrings.converter.buyAsset,
@@ -117,7 +117,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                 onAssetSelected: viewModel.updateToAsset,
               ),
               const SizedBox(height: AppDimens.p24),
-
               if (state.fromAsset != null && state.toAsset != null)
                 OpportunityCostCard(
                   amount: state.amount.toDouble(),
@@ -127,7 +126,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                   selectedDate: state.historicalDate,
                   onDateSelected: viewModel.updateHistoricalDate,
                 ),
-
               const SizedBox(height: 80),
             ],
           ),
@@ -144,6 +142,26 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
     Function(String)? onAmountChanged,
     required Function(PriceQuote) onAssetSelected,
   }) {
+    String displayTitle = AppStrings.common.select;
+    String? displaySubtitle;
+
+    if (quote != null) {
+      switch (quote.type) {
+        case AssetType.stock:
+          displayTitle = quote.assetCode;
+          displaySubtitle = quote.name;
+          break;
+        case AssetType.metal:
+          displayTitle = quote.name;
+          displaySubtitle = null;
+          break;
+        default:
+          displayTitle = AppFormatter.cleanAssetCode(quote.assetCode);
+          displaySubtitle = quote.name.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
+          break;
+      }
+    }
+
     return AppAmountInputField(
       label: title,
       textController: controller,
@@ -157,12 +175,14 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
       prefixWidget: GestureDetector(
         onTap: () => _showAssetPicker(context, ref, onAssetSelected),
         child: Container(
+          // [DÜZELTİLDİ]: Katı genişlik kısıtlaması kaldırıldı, alan yönetimi Flexible'a bırakıldı
           padding: const EdgeInsets.symmetric(horizontal: AppDimens.p12, vertical: AppDimens.p8),
           decoration: BoxDecoration(
             color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(AppDimens.radiusMd),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               if (quote != null) ...[
                 SizedBox(
@@ -171,7 +191,11 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                 ),
                 const SizedBox(width: AppDimens.p8),
               ],
-              Text(quote?.assetCode ?? AppStrings.common.select, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
+              // [DÜZELTİLDİ]: Uzun borsa kodları için güvenli metin bileşeni
+              AppSafeText(
+                displayTitle,
+                style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(width: AppDimens.p4),
               const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textMuted),
             ],
@@ -181,9 +205,16 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
       footer: quote != null
           ? Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start, // [DÜZELTİLDİ]: Çok satırlı metinlerde üstten hizalama
         children: [
-          Text(quote.name, style: AppTextStyles.caption),
-          Text("${AppStrings.labels.buy}: ${quote.formattedBid} / ${AppStrings.labels.sell}: ${quote.formattedAsk}", style: AppTextStyles.caption),
+          // [DÜZELTİLDİ]: Alt başlıklar çok uzunsa (Ereğli Demir Çelik vb.) 2 satıra inmesine izin verildi
+          AppSafeText(
+            displaySubtitle ?? "",
+            style: AppTextStyles.caption.copyWith(height: 1.2), // Okunabilirlik için satır aralığı
+            maxLines: 2,
+          ),
+          const SizedBox(width: AppDimens.p12),
+          Text("${AppStrings.labels.buy}: ${quote.formattedBid}", style: AppTextStyles.caption),
         ],
       )
           : null,

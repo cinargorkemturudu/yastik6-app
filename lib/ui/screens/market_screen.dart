@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
-import 'package:yastik_alti/ui/theme/app_dimens.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/states/market_view_model.dart';
 import 'package:yastik_alti/ui/widgets/cards/market_item_card.dart';
 import 'package:yastik_alti/ui/ui_models/market_item_ui_model.dart';
 import 'package:yastik_alti/ui/widgets/market_item_details_sheet.dart';
+import 'package:yastik_alti/ui/utils/category_helper.dart'; // [EKLENDİ]
 
 class MarketScreen extends ConsumerStatefulWidget {
   const MarketScreen({super.key});
@@ -30,128 +31,88 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     final state = ref.watch(marketViewModelProvider);
     final viewModel = ref.read(marketViewModelProvider.notifier);
 
+    // [MERKEZİ STANDART]: Kategoriler dinamik olarak Helper'dan alınıyor
+    final categories = CategoryHelper.marketCategories;
+
     return DefaultTabController(
-      length: 6, // [GÜNCELLENDİ] 3 -> 6
+      length: categories.length, // Dinamik sekme sayısı
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.background,
           elevation: 0,
-          title: Text(
-            AppStrings.titles.liveMarkets,
-            style: AppTextStyles.h2,
-          ),
+          title: Text(AppStrings.titles.liveMarkets, style: AppTextStyles.h2),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(110),
             child: Column(
               children: [
-                // --- ARAMA ÇUBUĞU ---
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimens.p16, vertical: AppDimens.p8), // [DÜZELTİLDİ]
+                  padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16, vertical: AppDimens.p8),
                   child: TextField(
                     controller: _searchController,
                     style: AppTextStyles.bodyLarge,
                     onChanged: (value) => viewModel.updateSearchQuery(value),
                     decoration: InputDecoration(
                       hintText: AppStrings.form.searchAssetHint,
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textMuted),
-                      prefixIcon: const Icon(
-                          Icons.search, color: AppColors.textMuted),
+                      hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
+                      prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
                       suffixIcon: state.searchQuery.isNotEmpty
                           ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors
-                            .textMuted),
+                        icon: const Icon(Icons.clear, color: AppColors.textMuted),
                         onPressed: () {
                           _searchController.clear();
                           viewModel.updateSearchQuery("");
                           FocusScope.of(context).unfocus();
                         },
-                      )
-                          : null,
+                      ) : null,
                       filled: true,
                       fillColor: AppColors.inputFill,
                       contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppDimens.radiusMd), // [DÜZELTİLDİ]
-                        borderSide: BorderSide.none,
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd), borderSide: BorderSide.none),
                     ),
                   ),
                 ),
-                // --- KATEGORİ SEKMELERİ ---
                 TabBar(
                   isScrollable: true,
-                  // [YENİ] Sekmelerin ekrana sığması için yatay kaydırma aktif
                   tabAlignment: TabAlignment.start,
-                  // [YENİ] Sekmeleri sola yaslar
                   indicatorColor: AppColors.textPrimary,
                   labelColor: AppColors.textPrimary,
                   unselectedLabelColor: AppColors.textMuted,
                   dividerColor: Colors.transparent,
-                  tabs: [
-                    const Tab(text: "Tümü"),
-                    // Uzun olmasın diye kısa bırakıldı
-                    Tab(text: AppStrings.categories.metal),
-                    Tab(text: AppStrings.categories.currency),
-                    Tab(text: AppStrings.categories.stock),
-                    // [YENİ EKLENDİ]
-                    Tab(text: AppStrings.categories.crypto),
-                    // [YENİ EKLENDİ]
-                    Tab(text: AppStrings.categories.indicator),
-                    // [YENİ EKLENDİ]
-                  ],
+                  // [DİNAMİK SEKMELER]
+                  tabs: categories.map((cat) => Tab(text: cat)).toList(),
                 ),
               ],
             ),
           ),
         ),
-
-        // --- GÖVDE ---
         body: TabBarView(
-          children: [
-            _buildFilteredList(
-                state.isLoading, state.searchQuery, state.allItems),
-            _buildFilteredList(
-                state.isLoading, state.searchQuery, state.metalItems),
-            _buildFilteredList(
-                state.isLoading, state.searchQuery, state.currencyItems),
-            _buildFilteredList(
-                state.isLoading, state.searchQuery, state.stockItems),
-            // [YENİ EKLENDİ]
-            _buildFilteredList(
-                state.isLoading, state.searchQuery, state.cryptoItems),
-            // [YENİ EKLENDİ]
-            _buildFilteredList(
-                state.isLoading, state.searchQuery, state.indicatorItems),
-            // [YENİ EKLENDİ]
-          ],
+          // [DİNAMİK LİSTELEME]: Seçilen kategoriye uyanlar filtrelenip çiziliyor
+          children: categories.map((cat) {
+            final filteredItems = state.allItems
+                .where((item) => CategoryHelper.matchesCategory(item.type, cat))
+                .toList();
+            return _buildFilteredList(state.isLoading, state.searchQuery, filteredItems);
+          }).toList(),
         ),
       ),
     );
   }
 
-  Widget _buildFilteredList(bool isLoading, String searchQuery,
-      List<MarketItemUiModel> items) {
-    if (isLoading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppColors.brandBlue));
-    }
+  Widget _buildFilteredList(bool isLoading, String searchQuery, List<MarketItemUiModel> items) {
+    if (isLoading) return const Center(child: CircularProgressIndicator(color: AppColors.brandBlue));
 
     if (items.isEmpty) {
       return Center(
         child: Text(
-          searchQuery.isEmpty
-              ? AppStrings.messages.emptyData
-              : AppStrings.messages.noResultsFor(searchQuery),
+          searchQuery.isEmpty ? AppStrings.messages.emptyData : AppStrings.messages.noResultsFor(searchQuery),
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
         ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: AppDimens.p8, bottom: 80), // [DÜZELTİLDİ] (80 alt alan paddingi olarak bırakıldı)
+      padding: const EdgeInsets.only(top: AppDimens.p8, bottom: 80),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
@@ -162,7 +123,6 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
-              // Köşe ovalliğinin arkasında beyaz kalmaması için
               builder: (context) => MarketItemDetailsSheet(model: item),
             );
           },

@@ -181,8 +181,6 @@ class RemoteMarketData {
       type: type,
       bid: bidVal,
       ask: askVal,
-      formattedBid: (j['formattedBid'] ?? '').toString(),
-      formattedAsk: (j['formattedAsk'] ?? '').toString(),
       changeRate: changeRateVal,
       asOf: asOf,
       expiresAt: expiresAt,

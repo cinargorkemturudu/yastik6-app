@@ -10,6 +10,7 @@ import 'package:yastik_alti/ui/widgets/asset_history_chart.dart';
 import 'package:yastik_alti/ui/states/asset_history_provider.dart';
 import 'package:yastik_alti/ui/states/portfolio_provider.dart';
 import 'package:yastik_alti/domain/models/entities/transaction.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
 
 class MarketItemDetailsSheet extends ConsumerStatefulWidget {
   final MarketItemUiModel model;
@@ -72,7 +73,6 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
       if (totalBuyAmount > 0) realAvgCost = totalBuyCost / totalBuyAmount;
     }
 
-    // [DÜZELTİLDİ] UI katmanında formatlama ve renklendirme için double'a çevrildi
     final displayPrice = (_hoveredPoint?.price ?? widget.model.ask).toDouble();
     final isHovering = _hoveredPoint != null;
 
@@ -81,10 +81,11 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
 
     if (realAvgCost != null) {
       final pnl = displayPrice - realAvgCost;
-      final pnlPercent = (pnl / realAvgCost) * 100;
+      final pnlRatio = pnl / realAvgCost;
       final prefix = pnl >= 0 ? '+' : '';
-      pnlString = "$prefix₺${pnl.toStringAsFixed(1)} ($prefix${pnlPercent.toStringAsFixed(2)}%)";
-      pnlColor = pnl.toPnlColor(); // Artık double olduğu için color extension sorunsuz çalışır
+
+      pnlString = "$prefix₺${AppFormatter.amount(pnl.abs(), "")} (${AppFormatter.signedPercent(pnlRatio)})";
+      pnlColor = pnl.toPnlColor();
     }
 
     return Dialog(
@@ -105,8 +106,11 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.model.name, style: AppTextStyles.h2, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text(widget.model.assetCode, style: AppTextStyles.caption.copyWith(color: assetColor)),
+                        // PRESENTATION LOGIC DELEGATED: 
+                        // The widget directly consumes the pre-formatted titles from the UI Model.
+                        Text(widget.model.displayTitle, style: AppTextStyles.h2, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        if (widget.model.displaySubtitle != null)
+                          Text(widget.model.displaySubtitle!, style: AppTextStyles.caption.copyWith(color: assetColor)),
                       ],
                     ),
                   ),
@@ -129,12 +133,12 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
                   children: [
                     _StatWidget(
                         title: isHovering ? AppStrings.labels.selectedPrice : AppStrings.labels.currentPrice,
-                        value: '₺${displayPrice.toStringAsFixed(2)}',
+                        value: '₺${AppFormatter.amount(displayPrice, "")}',
                         color: isHovering ? assetColor : AppColors.textPrimary
                     ),
                     _StatWidget(
                         title: AppStrings.labels.avgCost,
-                        value: realAvgCost != null ? '₺${realAvgCost.toStringAsFixed(2)}' : '-',
+                        value: realAvgCost != null ? '₺${AppFormatter.amount(realAvgCost, "")}' : '-',
                         color: AppColors.textSecondary
                     ),
                     _StatWidget(

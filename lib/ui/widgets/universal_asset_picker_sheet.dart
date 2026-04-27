@@ -7,9 +7,11 @@ import 'package:yastik_alti/ui/states/live_price_provider.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
-import 'package:yastik_alti/ui/theme/app_dimens.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_asset_list_tile.dart';
 import 'package:yastik_alti/ui/utils/asset_visual_mapper.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
+import 'package:yastik_alti/ui/utils/category_helper.dart'; // [EKLENDİ]
 
 class UniversalAssetPickerSheet extends ConsumerStatefulWidget {
   final Function(PriceQuote) onSelected;
@@ -34,15 +36,10 @@ class UniversalAssetPickerSheet extends ConsumerStatefulWidget {
 class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPickerSheet> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = "";
-  String _selectedCategory = AppStrings.categories.all;
 
-  final List<String> _categories = [
-    AppStrings.categories.all,
-    AppStrings.categories.metal,
-    AppStrings.categories.currency,
-    AppStrings.categories.crypto,
-    AppStrings.categories.stock,
-  ];
+  // [MERKEZİ STANDART]: İlk sekme all olarak seçili
+  String _selectedCategory = AppStrings.categories.all;
+  final List<String> _categories = CategoryHelper.coreCategories;
 
   @override
   void dispose() {
@@ -58,12 +55,8 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
       final searchMatches = quote.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           quote.assetCode.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      final type = quote.type;
-      bool categoryMatches = true;
-      if (_selectedCategory == AppStrings.categories.metal) categoryMatches = type == AssetType.metal;
-      if (_selectedCategory == AppStrings.categories.currency) categoryMatches = type == AssetType.currency;
-      if (_selectedCategory == AppStrings.categories.crypto) categoryMatches = type == AssetType.crypto;
-      if (_selectedCategory == AppStrings.categories.stock) categoryMatches = type == AssetType.stock;
+      // [MERKEZİ STANDART]: Filtreleme kuralı helper'a soruluyor
+      bool categoryMatches = CategoryHelper.matchesCategory(quote.type, _selectedCategory);
 
       return searchMatches && categoryMatches;
     }).toList();
@@ -75,18 +68,18 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16), // [DÜZELTİLDİ]
+          padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16),
           decoration: const BoxDecoration(
             color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLg)), // [DÜZELTİLDİ]
+            borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLg)),
           ),
           child: Column(
             children: [
-              const SizedBox(height: AppDimens.p12), // [DÜZELTİLDİ]
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.textMuted.withValues(alpha: AppAlphas.borderLight), borderRadius: BorderRadius.circular(AppDimens.radiusXs))), // [DÜZELTİLDİ]
-              const SizedBox(height: AppDimens.p16), // [DÜZELTİLDİ]
+              const SizedBox(height: AppDimens.p12),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.textMuted.withValues(alpha: AppAlphas.borderLight), borderRadius: BorderRadius.circular(AppDimens.radiusXs))),
+              const SizedBox(height: AppDimens.p16),
               Text(widget.title, style: AppTextStyles.h3),
-              const SizedBox(height: AppDimens.p16), // [DÜZELTİLDİ]
+              const SizedBox(height: AppDimens.p16),
 
               TextField(
                 controller: _searchCtrl,
@@ -104,15 +97,14 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                       setState(() => _searchQuery = '');
                       FocusScope.of(context).unfocus();
                     },
-                  )
-                      : null,
+                  ) : null,
                   filled: true,
                   fillColor: AppColors.surfaceLight,
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd), borderSide: BorderSide.none), // [DÜZELTİLDİ]
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd), borderSide: BorderSide.none),
                 ),
               ),
-              const SizedBox(height: AppDimens.p16), // [DÜZELTİLDİ]
+              const SizedBox(height: AppDimens.p16),
 
               SizedBox(
                 height: 36,
@@ -128,13 +120,13 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                         FocusScope.of(context).unfocus();
                       },
                       child: Container(
-                        margin: const EdgeInsets.only(right: AppDimens.p8), // [DÜZELTİLDİ]
-                        padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16), // [DÜZELTİLDİ]
+                        margin: const EdgeInsets.only(right: AppDimens.p8),
+                        padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: isSelected ? AppColors.brandBlue : AppColors.surface,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isSelected ? AppColors.brandBlue : AppColors.textPrimary.withValues(alpha: AppAlphas.hover)), // [DÜZELTİLDİ]
+                          border: Border.all(color: isSelected ? AppColors.brandBlue : AppColors.textPrimary.withValues(alpha: AppAlphas.hover)),
                         ),
                         child: Text(cat, style: AppTextStyles.captionBold.copyWith(color: isSelected ? Colors.white : AppColors.textSecondary)),
                       ),
@@ -142,15 +134,13 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                   },
                 ),
               ),
-              const SizedBox(height: AppDimens.p16), // [DÜZELTİLDİ]
+              const SizedBox(height: AppDimens.p16),
 
               Expanded(
                 child: filteredAssets.isEmpty
                     ? Center(
                   child: Text(
-                    _searchQuery.isEmpty
-                        ? (widget.customEmptyMessage ?? AppStrings.messages.emptyTicker)
-                        : AppStrings.messages.noResultsFor(_searchQuery),
+                    _searchQuery.isEmpty ? (widget.customEmptyMessage ?? AppStrings.messages.emptyTicker) : AppStrings.messages.noResultsFor(_searchQuery),
                     style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                     textAlign: TextAlign.center,
                   ),
@@ -160,13 +150,31 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                   itemCount: filteredAssets.length,
                   itemBuilder: (context, index) {
                     final quote = filteredAssets[index];
-
                     final isSellingFlow = widget.transactionType == TransactionType.sell;
-                    final displayPrice = isSellingFlow ? quote.formattedBid : quote.formattedAsk;
-                    final displaySubtitle = isSellingFlow ? AppStrings.form.currentBuyRate : AppStrings.form.currentSellRate;
+
+                    String displayTitle;
+                    String? displaySubtitle;
+
+                    switch (quote.type) {
+                      case AssetType.stock:
+                        displayTitle = quote.name;
+                        displaySubtitle = quote.assetCode;
+                        break;
+                      case AssetType.metal:
+                        displayTitle = quote.name;
+                        displaySubtitle = null;
+                        break;
+                      default:
+                        displayTitle = AppFormatter.cleanAssetCode(quote.assetCode);
+                        displaySubtitle = quote.name.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
+                        break;
+                    }
+
+                    final displayPrice = AppFormatter.money(isSellingFlow ? quote.bid.toDouble() : quote.ask.toDouble());
+                    final trailingSubtitle = isSellingFlow ? AppStrings.form.currentBuyRate : AppStrings.form.currentSellRate;
 
                     return AppAssetListTile(
-                      margin: const EdgeInsets.only(bottom: AppDimens.p10), // [DÜZELTİLDİ]
+                      margin: const EdgeInsets.only(bottom: AppDimens.p10),
                       onTap: () {
                         FocusScope.of(context).unfocus();
                         Navigator.pop(context);
@@ -176,14 +184,14 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                         width: 36, height: 36,
                         child: AssetVisualMapper.getAvatar(assetCode: quote.assetCode, type: quote.type),
                       ),
-                      title: Text(quote.name, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w700)),
-                      subtitle: Text(quote.assetCode, style: AppTextStyles.caption),
+                      title: Text(displayTitle, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w700)),
+                      subtitle: displaySubtitle != null ? Text(displaySubtitle, style: AppTextStyles.caption) : null,
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(displayPrice, style: AppTextStyles.priceLarge.copyWith(fontWeight: FontWeight.w800)),
-                          Text(displaySubtitle, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+                          Text(trailingSubtitle, style: AppTextStyles.caption.copyWith(fontSize: 10)),
                         ],
                       ),
                     );

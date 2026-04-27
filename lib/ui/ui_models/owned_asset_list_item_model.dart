@@ -19,6 +19,10 @@ class OwnedAssetListItemModel {
   final String avgCostText;       // e.g. "2,400 TL" (Ort. Maliyet)
   final String pnlValueText;      // e.g. "+5,000 TL" (Absolute PnL)
 
+  // [YENİ EKLENEN ALANLAR]: Arayüzün doğrudan okuyacağı kısımlar
+  final String displayTitle;
+  final String? displaySubtitle;
+
   const OwnedAssetListItemModel({
     required this.assetId,
     required this.type,
@@ -30,5 +34,7 @@ class OwnedAssetListItemModel {
     required this.pnlColor,
     required this.avgCostText,
     required this.pnlValueText,
+    required this.displayTitle,
+    required this.displaySubtitle,
   });
 }

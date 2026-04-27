@@ -57,7 +57,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
         allLots = UniversalPortfolioMapper.toRealizedLotUiModels(summary: summary, assetNames: assetNames, assetFilter: filterType);
       } else {
         currentDonut = PortfolioDonutModel(
-            totalTl: Decimal.zero, totalPnlTl: Decimal.zero, totalPnlPct: 0, // [FIXED]
+            totalTl: Decimal.zero, totalPnlTl: Decimal.zero, totalPnlPct: 0,
             totalValueText: "0,00 TL", totalPnlText: "0,00 TL (%0,00)",
             pnlColor: AppColors.textPrimary, items: []
         );
@@ -115,9 +115,15 @@ class PortfolioOverviewSection extends ConsumerWidget {
               ),
               const SizedBox(height: AppDimens.p10),
 
-              Text(
-                currentDonut.totalValueText,
-                style: AppTextStyles.heroAmount.copyWith(fontSize: 34),
+              // [DÜZELTİLDİ]: Milyonluk bakiyelerin ekrandan taşmasını engellemek için FittedBox kullanıldı.
+              // Rakamlar asla "..." ile kesilmez, sadece sığacak kadar küçülür.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  currentDonut.totalValueText,
+                  style: AppTextStyles.heroAmount.copyWith(fontSize: 34),
+                ),
               ),
 
               if (!uiState.isRealizedMode)

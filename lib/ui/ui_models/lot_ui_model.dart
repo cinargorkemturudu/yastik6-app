@@ -28,6 +28,9 @@ class LotUiModel {
   final String symbol;
   final AssetType type;
 
+  // PRESENTATION LOGIC: Pre-formatted title ready for direct UI consumption
+  final String displayTitle;
+
   final String originalAmountText;
   final String remainingAmountText;
   final String soldAmountText;
@@ -36,7 +39,7 @@ class LotUiModel {
 
   final String profitPercent;
 
-  final Decimal amountValue; // UPDATED to Decimal
+  final Decimal amountValue;
   String get pureAmount => amountValue.toString();
 
   final String? currentUnrealizedPnl;
@@ -59,12 +62,13 @@ class LotUiModel {
     required this.assetName,
     required this.symbol,
     required this.type,
+    required this.displayTitle, // NEW FIELD
     required this.originalAmountText,
     required this.remainingAmountText,
     required this.soldAmountText,
     required this.buyPriceText,
     required this.totalCostText,
-    required this.amountValue, // EXPECTS Decimal
+    required this.amountValue,
     required this.profitPercent,
     this.currentUnrealizedPnl,
     this.unrealizedColor,

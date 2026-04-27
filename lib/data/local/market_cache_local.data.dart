@@ -55,8 +55,6 @@ class MarketCacheLocalData {
           ),
           bid: Decimal.parse(map['bid'].toString()),
           ask: Decimal.parse(map['ask'].toString()),
-          formattedBid: map['formattedBid'],
-          formattedAsk: map['formattedAsk'],
           changeRate: (map['changeRate'] as num).toDouble(),
           asOf: DateTime.parse(map['asOf']),
           expiresAt: DateTime.parse(map['expiresAt']),

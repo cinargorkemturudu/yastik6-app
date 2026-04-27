@@ -49,18 +49,45 @@ class CategoryDetailScreen extends ConsumerWidget {
     final double totalValue = positions.fold(0.0, (sum, p) => sum + p.currentValue.toDouble());
     final double totalProfit = positions.fold(0.0, (sum, p) => sum + p.profit.toDouble());
 
-    final items = positions.map((p) => OwnedAssetListItemModel(
-      assetId: p.asset.id,
-      type: p.assetType,
-      title: assetNames[p.asset.symbol] ?? p.asset.name,
-      amountText: p.totalAmount.toDouble().toStringAsFixed(2),
-      currentPriceText: AppFormatter.money(p.currentPrice.toDouble()),
-      totalValueText: AppFormatter.money(p.currentValue.toDouble()),
-      pnlPercent: AppFormatter.percent(p.profitPct),
-      pnlColor: p.profit.toDouble().toPnlColor(),
-      avgCostText: AppFormatter.money(p.averageBuyPrice.toDouble()),
-      pnlValueText: AppFormatter.pnlValue(p.profit.toDouble()),
-    )).toList();
+    // [DÜZELTİLDİ]: Sunum mantığı modele aktarılırken uygulandı
+    final items = positions.map((p) {
+      final rawName = assetNames[p.asset.symbol] ?? p.asset.name;
+
+      String dTitle;
+      String? dSubtitle;
+
+      switch (p.assetType) {
+        case AssetType.stock:
+          dTitle = rawName;
+          dSubtitle = p.asset.symbol;
+          break;
+        case AssetType.metal:
+          dTitle = rawName;
+          dSubtitle = null; // Harem API'den gelen boşluğu/placeholder'ı sildik
+          break;
+        default: // Kripto ve Döviz
+          dTitle = AppFormatter.cleanAssetCode(p.asset.symbol);
+          // İsimde geçen yanıltıcı USD ibarelerini temizliyoruz
+          dSubtitle = rawName.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
+          break;
+      }
+
+      return OwnedAssetListItemModel(
+        assetId: p.asset.id,
+        type: p.assetType,
+        title: rawName,
+        amountText: p.totalAmount.toDouble().toStringAsFixed(2),
+        currentPriceText: AppFormatter.money(p.currentPrice.toDouble()),
+        totalValueText: AppFormatter.money(p.currentValue.toDouble()),
+        pnlPercent: AppFormatter.percent(p.profitPct),
+        pnlColor: p.profit.toDouble().toPnlColor(),
+        avgCostText: AppFormatter.money(p.averageBuyPrice.toDouble()),
+        pnlValueText: AppFormatter.pnlValue(p.profit.toDouble()),
+        // FORMATLANMIŞ VERİLERİ MODELLERE AKTARIYORUZ
+        displayTitle: dTitle,
+        displaySubtitle: dSubtitle,
+      );
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,

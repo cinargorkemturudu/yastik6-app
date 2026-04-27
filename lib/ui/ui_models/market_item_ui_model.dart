@@ -18,6 +18,10 @@ class MarketItemUiModel {
   final IconData trendIcon;
   final AssetType type;
 
+  // YENİ EKLENEN UI ALANLARI
+  final String displayTitle;
+  final String? displaySubtitle;
+
   MarketItemUiModel({
     required this.assetCode,
     required this.name,
@@ -29,6 +33,8 @@ class MarketItemUiModel {
     required this.trendColor,
     required this.trendIcon,
     required this.type,
+    required this.displayTitle,
+    required this.displaySubtitle,
   });
 
   factory MarketItemUiModel.fromQuote(PriceQuote quote) {
@@ -39,6 +45,26 @@ class MarketItemUiModel {
     IconData icon = Icons.remove;
     if (changeRateDouble > 0) icon = Icons.arrow_drop_up;
     if (changeRateDouble < 0) icon = Icons.arrow_drop_down;
+
+    // --- SUNUM MANTIĞI (PRESENTATION LOGIC) ---
+    String title;
+    String? subtitle;
+
+    switch (quote.type) {
+      case AssetType.stock:
+        title = quote.name;           // [DÜZELTİLDİ]: Şirket ismi tekrar ana başlık oldu
+        subtitle = quote.assetCode;   // [DÜZELTİLDİ]: Sembol (Borsa Kodu) alt başlığa (sub) çekildi
+        break;
+      case AssetType.metal:
+        title = quote.name;
+        subtitle = null; // Harem API'den gelen placeholder (boşluk vs) iptal edildi
+        break;
+      default: // Kripto ve diğerleri
+        title = AppFormatter.cleanAssetCode(quote.assetCode);
+        // İsimde geçen yanıltıcı USD ibarelerini temizliyoruz
+        subtitle = quote.name.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
+        break;
+    }
 
     return MarketItemUiModel(
       assetCode: quote.assetCode,
@@ -51,6 +77,8 @@ class MarketItemUiModel {
       changeRateText: AppFormatter.signedPercent(rawDecimal),
       trendColor: changeRateDouble.toPnlColor(),
       trendIcon: icon,
+      displayTitle: title,
+      displaySubtitle: subtitle,
     );
   }
 }
