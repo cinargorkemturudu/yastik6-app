@@ -28,10 +28,13 @@ import 'package:yastik_alti/domain/services/price_service.dart';
 
 import '../core/env.dart';
 import '../data/local/market_cache_local.data.dart';
+import '../domain/services/cloud_backup_service.dart';
 
 // --- CORE INFRASTRUCTURE ---
 
-final databaseProvider = Provider<Database>((ref) {
+// [DEĞİŞTİRİLDİ] Provider -> StateProvider oldu. Bu sayede veritabanı değiştiğinde,
+// bu provider'a bağımlı tüm Repo'lar ve Service'ler otomatik olarak kendini yeni veritabanı ile baştan oluşturur.
+final databaseProvider = StateProvider<Database>((ref) {
   throw UnimplementedError('Database must be overridden in main.dart');
 });
 
@@ -59,19 +62,19 @@ final remoteHaremDataProvider = Provider<RemoteMarketData>((ref) {
 final assetLocalDataProvider = Provider((ref) => AssetLocalData());
 final transactionLocalDataProvider = Provider((ref) => TransactionLocalData());
 final allocationLocalDataProvider = Provider((ref) => AllocationLocalData());
-final marketCacheLocalDataProvider = Provider((ref) => MarketCacheLocalData()); // <-- YENİ EKLENDİ
+final marketCacheLocalDataProvider = Provider((ref) => MarketCacheLocalData());
 
 // --- REPOSITORIES ---
 
 final priceRepoProvider = Provider<PriceIRepository>((ref) {
   final remote = ref.watch(remoteHaremDataProvider);
-  final cache = ref.watch(marketCacheLocalDataProvider); // <-- YENİ EKLENDİ
-  return PriceRepo(remote, cache); // <-- GÜNCELLENDİ
+  final cache = ref.watch(marketCacheLocalDataProvider);
+  return PriceRepo(remote, cache);
 });
 
 final assetRepoProvider = Provider<AssetIRepository>((ref) {
   final local = ref.watch(assetLocalDataProvider);
-  final db = ref.watch(databaseProvider);
+  final db = ref.watch(databaseProvider); // [KRİTİK] StateProvider güncellendiğinde bu Repo otomatik baştan oluşur
   return AssetRepo(local, db);
 });
 
@@ -89,6 +92,10 @@ final transactionRepoProvider = Provider<TransactionIRepository>((ref) {
 });
 
 // --- SERVICES ---
+
+final cloudBackupServiceProvider = Provider<CloudBackupService>((ref) {
+  return CloudBackupService();
+});
 
 final priceServiceProvider = Provider<PriceService>((ref) {
   final repo = ref.watch(priceRepoProvider);
