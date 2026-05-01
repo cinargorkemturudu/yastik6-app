@@ -9,4 +9,7 @@ abstract class Env {
 
   @EnviedField(varName: 'BASE_URL', obfuscate: true)
   static final String baseUrl = _Env.baseUrl;
+
+  @EnviedField(varName: 'GOOGLE_DRIVE_CLIENT_ID', obfuscate: true)
+  static final String googleDriveClientId = _Env.googleDriveClientId;
 }

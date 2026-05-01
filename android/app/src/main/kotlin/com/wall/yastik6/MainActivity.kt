@@ -1,4 +1,4 @@
-package com.example.yastik_alti
+package com.wall.yastik6
 
 import io.flutter.embedding.android.FlutterActivity
 

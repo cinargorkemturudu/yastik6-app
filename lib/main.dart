@@ -2,7 +2,7 @@ import 'dart:ui'; // PlatformDispatcher için gerekli
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/app.dart';
-import 'package:yastik_alti/core/app_log.dart'; // Loglama kütüphanemiz eklendi
+import 'package:yastik_alti/core/app_log.dart';
 import 'package:yastik_alti/di/providers.dart';
 import 'package:yastik_alti/data/local/local_database.dart';
 
@@ -32,13 +32,14 @@ void main() async {
   };
 
   try {
-    // 3. Doğru şemaya sahip veritabanını açıyoruz
-    final db = await LocalDatabase().database;
+    // 3. Doğru şemaya sahip veritabanını Singleton üzerinden açıyoruz
+    final db = await LocalDatabase.instance.database;
 
     runApp(
       ProviderScope(
         overrides: [
-          databaseProvider.overrideWithValue(db),
+          // StateProvider olduğu için syntax overrideWith((ref) => db) şekline döndü
+          databaseProvider.overrideWith((ref) => db),
         ],
         child: const MyApp(),
       ),
@@ -51,8 +52,7 @@ void main() async {
       stackTrace: stackTrace,
     );
 
-    // Anti-Pattern Koruması: Başlangıçta veritabanı veya kritik bir bağımlılık çökerse,
-    // uygulamanın siyah/beyaz ekranda donup kalmasını engellemek için Fallback UI tetiklenir.
+    // Anti-Pattern Koruması: Başlangıçta veritabanı veya kritik bir bağımlılık çökerse
     runApp(const FallbackUI());
   }
 }

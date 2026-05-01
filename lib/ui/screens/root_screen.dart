@@ -1,6 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:yastik_alti/domain/services/cloud_backup_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // [EKLENDİ]: Riverpod gücü
 import 'package:yastik_alti/ui/screens/portfolio_screen.dart';
 import 'package:yastik_alti/ui/screens/market_screen.dart';
 import 'package:yastik_alti/ui/screens/converter_screen.dart';
@@ -10,72 +9,26 @@ import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/ticker_settings_sheet.dart';
+import 'package:yastik_alti/ui/states/cloud_backup_controller.dart'; // [EKLENDİ]: Köprümüz
 
-class RootScreen extends StatefulWidget {
+// [DÜZELTİLDİ]: Sınıf artık Riverpod ConsumerStatefulWidget
+class RootScreen extends ConsumerStatefulWidget {
   const RootScreen({super.key});
 
   @override
-  State<RootScreen> createState() => _RootScreenState();
+  ConsumerState<RootScreen> createState() => _RootScreenState();
 }
 
-class _RootScreenState extends State<RootScreen> {
+class _RootScreenState extends ConsumerState<RootScreen> {
   int _currentIndex = 0;
-  bool _isCloudLoading = false; // Yedekleme/Geri yükleme sırasında UI'ı kilitler
-  String? _connectedEmail; // Bağlı olan hesabı göstermek için
+  // [SİLİNDİ]: _isCloudLoading ve _connectedEmail artık burada değil, Controller'da!
+  // [SİLİNDİ]: O devasa _handleCloudAction metodu çöpe atıldı!
 
   final List<Widget> _screens = const [
     PortfolioScreen(),
     MarketScreen(),
     ConverterScreen(),
   ];
-
-  // =========================================================================
-  // BULUT İŞLEM YÖNETİCİSİ (Backup & Restore)
-  // =========================================================================
-  Future<void> _handleCloudAction(bool isBackup) async {
-    if (_isCloudLoading) return;
-
-    setState(() => _isCloudLoading = true);
-    final backupService = CloudBackupService();
-
-    try {
-      final account = await backupService.signIn();
-      if (!mounted) return;
-
-      if (!Platform.isIOS && account == null) {
-        _showStatusMessage(AppStrings.messages.loginCanceled, AppColors.lossAccent);
-        setState(() => _isCloudLoading = false);
-        return;
-      }
-
-      setState(() => _connectedEmail = account?.email);
-
-      _showStatusMessage(
-        isBackup ? "Buluta yedekleniyor..." : "Yedek indiriliyor...",
-        AppColors.brandBlue,
-      );
-
-      // Dinamik olarak backup veya restore metodunu çağırır
-      final success = isBackup
-          ? await backupService.backupDatabase()
-          : await backupService.restoreDatabase();
-
-      if (!mounted) return;
-
-      if (success) {
-        _showStatusMessage(
-            isBackup ? "Yedekleme başarılı!" : "Geri yükleme başarılı! Lütfen uygulamayı yeniden başlatın.",
-            AppColors.profitAccent
-        );
-      } else {
-        _showStatusMessage("İşlem başarısız oldu. Yedek bulunamadı veya hata oluştu.", AppColors.lossAccent);
-      }
-    } catch (e) {
-      _showStatusMessage("Bir hata oluştu: $e", AppColors.lossAccent);
-    } finally {
-      if (mounted) setState(() => _isCloudLoading = false);
-    }
-  }
 
   void _showStatusMessage(String message, Color color) {
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -90,6 +43,21 @@ class _RootScreenState extends State<RootScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // [YENİ EKLENDİ]: Riverpod State ve Controller bağlantısı
+    final cloudState = ref.watch(cloudBackupControllerProvider);
+    final cloudNotifier = ref.read(cloudBackupControllerProvider.notifier);
+
+    // [YENİ EKLENDİ]: State değişimlerini gizlice dinleyip ekrana popup fırlatan yapı
+    ref.listen(cloudBackupControllerProvider, (prev, next) {
+      if (next.isLoading && !(prev?.isLoading ?? false)) {
+        _showStatusMessage("Bulut işlemi başlatıldı, lütfen bekleyin...", AppColors.brandBlue);
+      } else if (next.isSuccess && !(prev?.isSuccess ?? false)) {
+        _showStatusMessage("İşlem başarıyla tamamlandı!", AppColors.profitAccent);
+      } else if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
+        _showStatusMessage(next.errorMessage!, AppColors.lossAccent);
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const HomeAppBar(),
@@ -103,14 +71,6 @@ class _RootScreenState extends State<RootScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16, vertical: AppDimens.p24),
                 child: Text(AppStrings.common.menu, style: AppTextStyles.h2),
               ),
-
-              if (_connectedEmail != null) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16),
-                  child: Text("Bağlı: $_connectedEmail", style: AppTextStyles.caption.copyWith(color: AppColors.brandBlue)),
-                ),
-                const SizedBox(height: 8),
-              ],
 
               const Divider(height: AppDimens.dividerHeight, color: AppColors.surfaceLight),
 
@@ -130,25 +90,28 @@ class _RootScreenState extends State<RootScreen> {
 
               // --- YEDEKLE BUTONU ---
               ListTile(
-                enabled: !_isCloudLoading,
-                leading: _isCloudLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Icon(Icons.cloud_upload_outlined, color: AppColors.brandBlue),
+                enabled: !cloudState.isLoading, // [DÜZELTİLDİ]: UI kilitlemesini State yapıyor
+                leading: cloudState.isLoading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.cloud_upload_outlined, color: AppColors.brandBlue),
                 title: Text("Yedekle", style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                 onTap: () {
-                  Navigator.pop(context);
-                  _handleCloudAction(true);
+                  Navigator.pop(context); // Menüyü kapat
+                  cloudNotifier.backup(); // [DÜZELTİLDİ]: Motoru doğrudan Riverpod tetikliyor
                 },
               ),
 
               // --- GERİ YÜKLE BUTONU ---
               ListTile(
-                enabled: !_isCloudLoading,
+                enabled: !cloudState.isLoading,
                 leading: const Icon(Icons.settings_backup_restore, color: AppColors.lossAccent),
                 title: Text("Geri Yükle", style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                 onTap: () async {
                   Navigator.pop(context);
                   final confirm = await _showRestoreDialog();
-                  if (confirm == true) _handleCloudAction(false);
+                  if (confirm == true) {
+                    cloudNotifier.restore(); // [DÜZELTİLDİ]: Motoru doğrudan Riverpod tetikliyor
+                  }
                 },
               ),
             ],

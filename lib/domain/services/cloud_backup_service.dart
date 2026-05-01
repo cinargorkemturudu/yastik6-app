@@ -3,16 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
-// [V7 GÜNCEL]: Artık doğrudan Authorization nesnesine authClient() metodunu kazandırıyor
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:icloud_storage/icloud_storage.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:yastik_alti/data/local/db_constants.dart';
 
-// =========================================================================
-// STRATEGY PATTERN ARAYÜZÜ (Platform Bağımsız Yapı)
-// =========================================================================
+import '../../core/env.dart';
+
 abstract class CloudBackupStrategy {
   Future<bool> backupDatabase();
   Future<bool> restoreDatabase();
@@ -20,67 +18,60 @@ abstract class CloudBackupStrategy {
   Future<void> signOut();
 }
 
-// =========================================================================
-// GOOGLE DRIVE UYGULAMASI (Android İçin - Google Sign In v7.2.0 API)
-// =========================================================================
 class GoogleDriveBackupStrategy implements CloudBackupStrategy {
   static const _scopes = [drive.DriveApi.driveAppdataScope];
 
-  // [V7 ÇÖZÜMÜ 1]: Artık nesne oluşturulmuyor, Singleton (instance) kullanılıyor
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   bool _isInitialized = false;
 
   Future<void> _ensureInitialized() async {
     if (!_isInitialized) {
-      // [V7 ÇÖZÜMÜ 2]: Client ID'ler artık initialize() içinde tanımlanıyor
       await _googleSignIn.initialize(
-        serverClientId: "148786327804-saf1m6d7nh8td79f7cfsju8lnnafk0ev.apps.googleusercontent.com",
+        serverClientId: Env.googleDriveClientId,
       );
       _isInitialized = true;
     }
   }
 
   Future<File?> _getDatabaseFile() async {
-    try {
-      final dbFolder = await getDatabasesPath();
-      final dbPath = join(dbFolder, DbConstants.dbName);
-      final dbFile = File(dbPath);
+    final dbFolder = await getDatabasesPath();
+    final dbPath = join(dbFolder, DbConstants.dbName);
+    final dbFile = File(dbPath);
 
-      if (await dbFile.exists()) return dbFile;
-      return null;
-    } catch (e) {
-      debugPrint("Dosya yolu bulunurken hata: $e");
-      return null;
-    }
+    if (await dbFile.exists()) return dbFile;
+    return null;
   }
 
-  // [V7 ÇÖZÜMÜ 3]: Yetkilendirme (Authorization) adımı ayrıldı
   Future<http.Client?> _getAuthenticatedClient(GoogleSignInAccount account) async {
     try {
-      // 1. Kullanıcının Drive yetkisi verip vermediğini kontrol et, yoksa yetki iste
       var authorization = await account.authorizationClient.authorizationForScopes(_scopes);
+      // Since authorizeScopes returns a non-nullable object or throws an error, we don't need a null check
       authorization ??= await account.authorizationClient.authorizeScopes(_scopes);
 
-      // 2. Extension paketi sayesinde authorization nesnesi üzerinden Client al! (Unused import hatasını çözen yer)
       return authorization.authClient(scopes: _scopes);
     } catch (e) {
-      debugPrint("Auth Client oluşturulamadı: $e");
-      return null;
+      throw Exception("Yetkilendirme Hatası: $e");
     }
   }
 
   @override
   Future<bool> backupDatabase() async {
+    final dbFile = await _getDatabaseFile();
+    if (dbFile == null) {
+      throw Exception("Yerel veritabanı bulunamadı. Lütfen önce uygulamaya bir işlem ekleyin.");
+    }
+
+    final account = await signIn();
+    if (account == null) {
+      throw Exception("Google Girişi başarısız oldu.");
+    }
+
+    final client = await _getAuthenticatedClient(account);
+    if (client == null) {
+      throw Exception("Google Drive API yetkisi alınamadı.");
+    }
+
     try {
-      final dbFile = await _getDatabaseFile();
-      if (dbFile == null) return false;
-
-      final account = await signIn();
-      if (account == null) return false;
-
-      final client = await _getAuthenticatedClient(account);
-      if (client == null) return false;
-
       final driveApi = drive.DriveApi(client);
       final media = drive.Media(dbFile.openRead(), dbFile.lengthSync());
       final cloudFileName = 'yastik6_backup_${DbConstants.dbName}';
@@ -105,20 +96,19 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
       debugPrint("Google Drive Yedekleme Başarılı!");
       return true;
     } catch (e) {
-      debugPrint("Google Drive Yedekleme çöktü: $e");
-      return false;
+      throw Exception("Drive Yükleme Hatası: $e");
     }
   }
 
   @override
   Future<bool> restoreDatabase() async {
+    final account = await signIn();
+    if (account == null) throw Exception("Google Girişi başarısız oldu.");
+
+    final client = await _getAuthenticatedClient(account);
+    if (client == null) throw Exception("Google Drive API yetkisi alınamadı.");
+
     try {
-      final account = await signIn();
-      if (account == null) return false;
-
-      final client = await _getAuthenticatedClient(account);
-      if (client == null) return false;
-
       final driveApi = drive.DriveApi(client);
       final cloudFileName = 'yastik6_backup_${DbConstants.dbName}';
 
@@ -127,10 +117,12 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
         q: "name = '$cloudFileName'",
       );
 
-      if (fileList.files == null || fileList.files!.isEmpty) return false;
+      if (fileList.files == null || fileList.files!.isEmpty) {
+        throw Exception("Bulutta '$cloudFileName' adlı yedek dosyası bulunamadı.");
+      }
 
       final fileId = fileList.files!.first.id;
-      if (fileId == null) return false;
+      if (fileId == null) throw Exception("Dosya ID'si alınamadı.");
 
       final drive.Media media = await driveApi.files.get(
         fileId,
@@ -150,8 +142,7 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
       debugPrint("Google Drive Geri yükleme Başarılı!");
       return true;
     } catch (e) {
-      debugPrint("Google Drive Geri yükleme çöktü: $e");
-      return false;
+      throw Exception("Drive İndirme Hatası: $e");
     }
   }
 
@@ -159,12 +150,10 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
   Future<GoogleSignInAccount?> signIn() async {
     try {
       await _ensureInitialized();
-      // [V7 ÇÖZÜMÜ 4]: 'signIn' metodu kalktı, yerine 'authenticate' geldi
-      final account = await _googleSignIn.authenticate();
-      return account;
+      // authenticate() automatically throws a PlatformException if cancelled, no null check needed
+      return await _googleSignIn.authenticate();
     } catch (error) {
-      debugPrint("Google Girişi iptal edildi veya hata: $error");
-      return null;
+      throw Exception("Giriş Hatası: $error");
     }
   }
 
@@ -175,32 +164,26 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
   }
 }
 
-// =========================================================================
-// ICLOUD UYGULAMASI (iOS İçin Apple Ekosistemi)
-// =========================================================================
 class ICloudBackupStrategy implements CloudBackupStrategy {
   final String _containerId = 'iCloud.com.yourdomain.yastikAlti';
 
   Future<File?> _getLocalDatabaseFile() async {
-    try {
-      final dbFolder = await getDatabasesPath();
-      final dbPath = join(dbFolder, DbConstants.dbName);
-      final dbFile = File(dbPath);
+    final dbFolder = await getDatabasesPath();
+    final dbPath = join(dbFolder, DbConstants.dbName);
+    final dbFile = File(dbPath);
 
-      if (await dbFile.exists()) return dbFile;
-      return null;
-    } catch (e) {
-      debugPrint("Dosya yolu bulunurken hata: $e");
-      return null;
-    }
+    if (await dbFile.exists()) return dbFile;
+    return null;
   }
 
   @override
   Future<bool> backupDatabase() async {
-    try {
-      final dbFile = await _getLocalDatabaseFile();
-      if (dbFile == null) return false;
+    final dbFile = await _getLocalDatabaseFile();
+    if (dbFile == null) {
+      throw Exception("Yerel veritabanı bulunamadı. Lütfen önce uygulamaya bir işlem ekleyin.");
+    }
 
+    try {
       final cloudFileName = 'yastik6_backup_${DbConstants.dbName}';
 
       await ICloudStorage.upload(
@@ -215,8 +198,7 @@ class ICloudBackupStrategy implements CloudBackupStrategy {
       debugPrint("iCloud Yedekleme Başarılı!");
       return true;
     } catch (e) {
-      debugPrint("iCloud Yedekleme çöktü: $e");
-      return false;
+      throw Exception("iCloud Yükleme Hatası: $e");
     }
   }
 
@@ -239,24 +221,17 @@ class ICloudBackupStrategy implements CloudBackupStrategy {
       debugPrint("iCloud Geri yükleme Başarılı!");
       return true;
     } catch (e) {
-      debugPrint("iCloud Geri yükleme çöktü: $e");
-      return false;
+      throw Exception("iCloud İndirme Hatası: $e");
     }
   }
 
   @override
-  Future<GoogleSignInAccount?> signIn() async {
-    return null;
-  }
+  Future<GoogleSignInAccount?> signIn() async => null;
 
   @override
-  Future<void> signOut() async {
-  }
+  Future<void> signOut() async {}
 }
 
-// =========================================================================
-// FACADE / KÖPRÜ (RootScreen ile Kusursuz Uyum)
-// =========================================================================
 class CloudBackupService {
   final CloudBackupStrategy _strategy;
 

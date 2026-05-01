@@ -4,19 +4,32 @@ import '../../core/app_log.dart';
 import 'db_constants.dart';
 
 class LocalDatabase {
-
-  // [EDITED] İndeksleri eklediğimiz için versiyonu 2'den 3'e çıkarıyoruz.
   static const _dbVersion = 3;
+
+  // [YENİ] Strict Singleton Prensibi: Uygulama boyunca tek bir instance olmasını garanti eder.
+  LocalDatabase._privateConstructor();
+  static final LocalDatabase instance = LocalDatabase._privateConstructor();
+  factory LocalDatabase() => instance;
 
   Database? _database;
 
   Future<Database> get database async {
     final db = _database;
     if (db != null) return db;
-    
+
     final newDb = await _initDatabase();
     _database = newDb;
     return newDb;
+  }
+
+  // [YENİ] Veritabanı bağlantısını fiziksel olarak kapatıp RAM'den temizler ve baştan açar.
+  Future<Database> resetDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+    AppLog.info('Database connection reset manually (Cloud Restore).', domain: 'DATABASE');
+    return await database; // Yeniden init edilmesini tetikler
   }
 
   Future<Database> _initDatabase() async {
@@ -65,18 +78,13 @@ class LocalDatabase {
           )
         ''');
 
-        // [EDITED] Yeni kullanıcılar için tablolar oluşturulduktan hemen sonra indeksler de oluşturuluyor.
         await _createIndexes(db);
       },
-      // Uygulama güncellendiğinde (eski versiyondan yeni versiyona geçişte) çalışacak göç bloğu.
       onUpgrade: (db, oldVersion, newVersion) async {
         AppLog.insight('db_upgraded', metadata: {'from': oldVersion, 'to': newVersion});
 
-        // Eğer kullanıcının cihazındaki veritabanı versiyonu 2'den küçükse bu göç (migration) işlemi yapılacak.
         if (oldVersion < 2) {
-
           // 1. ADIM: ASSETS TABLOSU GÖÇÜ
-          // Yeni şemaya (TEXT) uygun geçici bir tablo oluşturuyoruz.
           await db.execute('''
             CREATE TABLE assets_new (
               ${DbConstants.colId} TEXT PRIMARY KEY, 
@@ -87,18 +95,15 @@ class LocalDatabase {
               ${DbConstants.colLastUpdate} TEXT NOT NULL
             )
           ''');
-          // Eski tablodaki verileri alıp, SQLite'ın CAST komutu ile güvenli bir şekilde metne dönüştürerek yeni tabloya aktarıyoruz.
           await db.execute('''
             INSERT INTO assets_new 
             SELECT ${DbConstants.colId}, ${DbConstants.colName}, ${DbConstants.colSymbol}, ${DbConstants.colType}, CAST(${DbConstants.colCurrentPrice} AS TEXT), ${DbConstants.colLastUpdate} 
             FROM ${DbConstants.tableAssets}
           ''');
-          // Eski tabloyu siliyoruz ve yeni tablonun adını orijinal isimle değiştiriyoruz.
           await db.execute('DROP TABLE ${DbConstants.tableAssets}');
           await db.execute('ALTER TABLE assets_new RENAME TO ${DbConstants.tableAssets}');
 
           // 2. ADIM: TRANSACTIONS TABLOSU GÖÇÜ
-          // Aynı mantığı finansal alanların yoğun olduğu işlemler tablosu için yapıyoruz.
           await db.execute('''
             CREATE TABLE transactions_new (
               ${DbConstants.colId} TEXT PRIMARY KEY, 
@@ -140,8 +145,6 @@ class LocalDatabase {
           await db.execute('ALTER TABLE allocations_new RENAME TO ${DbConstants.tableAllocations}');
         }
 
-        // [EDITED] Versiyon 2'den 3'e geçiş (İndekslerin eklenmesi)
-        // Eğer kullanıcı eski bir versiyondan (v1 veya v2) geliyorsa indeksleri onun cihazında da oluşturuyoruz.
         if (oldVersion < 3) {
           await _createIndexes(db);
         }
@@ -152,14 +155,10 @@ class LocalDatabase {
     );
   }
 
-  // [EDITED] İndeks oluşturma metodunu buraya ekliyoruz.
   Future<void> _createIndexes(Database db) async {
-    // Transactions tablosunda asset_id'ye göre filtrelemeyi hızlandırır
     await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_transactions_asset_id ON ${DbConstants.tableTransactions}(${DbConstants.colAssetId})'
     );
-
-    // Allocations tablosunda sell_tx_id ve buy_tx_id'ye göre aramaları hızlandırır (FIFO hesaplamaları için kritik)
     await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_allocations_sell_tx_id ON ${DbConstants.tableAllocations}(${DbConstants.colSellTxId})'
     );
