@@ -1,7 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_quote.dart';
-import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/utils/app_formatter.dart';
 
 import '../../domain/models/entities/asset.dart';
@@ -18,7 +17,6 @@ class MarketItemUiModel {
   final IconData trendIcon;
   final AssetType type;
 
-  // YENİ EKLENEN UI ALANLARI
   final String displayTitle;
   final String? displaySubtitle;
 
@@ -38,9 +36,9 @@ class MarketItemUiModel {
   });
 
   factory MarketItemUiModel.fromQuote(PriceQuote quote) {
-    // Ensuring changeRate handles double operations cleanly
-    final double changeRateDouble = quote.changeRate.toDouble();
-    final rawDecimal = changeRateDouble / 100;
+    // Ensuring changeRate handles double operations cleanly since it's just a UI ratio
+    final double changeRateDouble = quote.changeRate;
+    final double rawDecimal = changeRateDouble / 100;
 
     IconData icon = Icons.remove;
     if (changeRateDouble > 0) icon = Icons.arrow_drop_up;
@@ -52,19 +50,21 @@ class MarketItemUiModel {
 
     switch (quote.type) {
       case AssetType.stock:
-        title = quote.name;           // [DÜZELTİLDİ]: Şirket ismi tekrar ana başlık oldu
-        subtitle = quote.assetCode;   // [DÜZELTİLDİ]: Sembol (Borsa Kodu) alt başlığa (sub) çekildi
+        title = quote.name;
+        subtitle = quote.assetCode;
         break;
       case AssetType.metal:
         title = quote.name;
-        subtitle = null; // Harem API'den gelen placeholder (boşluk vs) iptal edildi
+        subtitle = null;
         break;
       default: // Kripto ve diğerleri
         title = AppFormatter.cleanAssetCode(quote.assetCode);
-        // İsimde geçen yanıltıcı USD ibarelerini temizliyoruz
         subtitle = quote.name.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
         break;
     }
+
+    // [FIXED] Dynamically inject precision based on asset type to prevent truncating crypto
+    final int precision = quote.type == AssetType.crypto ? 4 : 2;
 
     return MarketItemUiModel(
       assetCode: quote.assetCode,
@@ -72,8 +72,9 @@ class MarketItemUiModel {
       ask: quote.ask,
       bid: quote.bid,
       type: quote.type,
-      formattedAsk: quote.formattedAsk,
-      formattedBid: quote.formattedBid,
+      // [FIXED] Replaced domain-level getters with native UI formatting
+      formattedAsk: "${AppFormatter.amount(quote.ask, "", precision: precision)} TL",
+      formattedBid: "${AppFormatter.amount(quote.bid, "", precision: precision)} TL",
       changeRateText: AppFormatter.signedPercent(rawDecimal),
       trendColor: changeRateDouble.toPnlColor(),
       trendIcon: icon,

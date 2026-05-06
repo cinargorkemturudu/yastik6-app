@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// REMOVED: asset.dart (AssetType is no longer needed here)
 import 'package:yastik_alti/ui/states/home_view_model.dart';
 import 'package:yastik_alti/ui/ui_models/lot_ui_model.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
@@ -8,6 +7,9 @@ import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
+import 'package:yastik_alti/ui/states/portfolio_provider.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/utils/app_formatter.dart'; // [EKLENDİ]
+import 'package:collection/collection.dart'; // [EKLENDİ] firstWhereOrNull için
 
 class LotCard extends ConsumerStatefulWidget {
   final LotUiModel model;
@@ -36,8 +38,6 @@ class _LotCardState extends ConsumerState<LotCard> {
     return widget.model.note != null && widget.model.note!.trim().isNotEmpty;
   }
 
-  // REMOVED: _mainTitle getter containing presentation logic
-
   @override
   Widget build(BuildContext context) {
     if (widget.model.isSellCard) {
@@ -54,7 +54,7 @@ class _LotCardState extends ConsumerState<LotCard> {
             const SizedBox(height: AppDimens.p12),
             Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: 1),
             const SizedBox(height: AppDimens.p12),
-            _buildExpandedDetails(),
+            _buildExpandedDetails(ref), // [GÜNCELLENDİ] ref parametresi eklendi
           ],
         ],
       ),
@@ -78,7 +78,6 @@ class _LotCardState extends ConsumerState<LotCard> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  // DELEGATED LOGIC: Consuming pre-formatted displayTitle from model
                   _hasNote ? widget.model.note! : widget.model.displayTitle,
                   style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 13),
                 ),
@@ -143,7 +142,6 @@ class _LotCardState extends ConsumerState<LotCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                // DELEGATED LOGIC: Consuming pre-formatted displayTitle from model
                 "${widget.model.originalAmountText} ${widget.model.displayTitle}",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -180,7 +178,12 @@ class _LotCardState extends ConsumerState<LotCard> {
     );
   }
 
-  Widget _buildExpandedDetails() {
+  Widget _buildExpandedDetails(WidgetRef ref) {
+    // [YENİ] Varlığın genel ortalama maliyetini çekiyoruz
+    final portfolio = ref.watch(portfolioProvider);
+    final position = portfolio.snapshot.positions.firstWhereOrNull((p) => p.asset.symbol == widget.model.symbol);
+    final generalAvgCostText = position != null ? AppFormatter.money(position.averageBuyPrice) : "-";
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -222,7 +225,8 @@ class _LotCardState extends ConsumerState<LotCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text("${AppStrings.labels.buy}: ${widget.model.buyPriceText}", style: AppTextStyles.caption.copyWith(fontSize: 9)),
-                Text("${AppStrings.labels.avgCost}: ${widget.model.totalCostText}", style: AppTextStyles.caption.copyWith(fontSize: 9)),
+                // [DÜZELTİLDİ] Genel ortalama maliyet gösteriliyor
+                Text("${AppStrings.labels.avgCost} $generalAvgCostText", style: AppTextStyles.caption.copyWith(fontSize: 9)),
               ],
             ),
             const SizedBox(height: AppDimens.p4),

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart'; // [FIXED] Added missing import
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_point.dart';
 import 'package:yastik_alti/di/providers.dart';
@@ -45,7 +46,8 @@ class HistoricalPriceParams {
   int get hashCode => assetCode.hashCode ^ date.hashCode;
 }
 
-final historicalPriceProvider = FutureProvider.autoDispose.family<double?, HistoricalPriceParams>(
+// [FIXED] Upgraded from double? to Decimal?
+final historicalPriceProvider = FutureProvider.autoDispose.family<Decimal?, HistoricalPriceParams>(
       (ref, params) async {
     final repo = ref.watch(priceRepoProvider);
 
@@ -64,6 +66,6 @@ final historicalPriceProvider = FutureProvider.autoDispose.family<double?, Histo
       }
     }
 
-    return closest.price.toDouble(); 
+    return closest.price; // [FIXED] Return pure Decimal
   },
 );

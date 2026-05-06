@@ -148,18 +148,23 @@ class PortfolioService {
       AppLog.info('Update restricted to Note only for allocated transaction: ${originalTx.id}', domain: 'DOMAIN_SERVICE');
     } else {
       final allTxs = await _tr.getByAssetId(originalTx.assetId);
-      final sellDates = allTxs
-          .where((t) => t.type == TransactionType.sell)
+
+      // [YENİ]: Varlığa ait tüm tarih bariyerlerini topla (Satışlar + Diğer Alışlar)
+      final barrierDates = allTxs
+          .where((t) => t.id != originalTx.id) // Kendisi hariç
+          .where((t) => t.type == TransactionType.sell || t.purchaseDate.isBefore(originalTx.purchaseDate))
           .map((t) => t.purchaseDate)
           .toList();
 
-      if (sellDates.isNotEmpty) {
-        final latestSellDate = sellDates.reduce((a, b) => a.isAfter(b) ? a : b);
-        if (newDate.isBefore(latestSellDate)) {
-          AppLog.warning('Timeline Paradox prevented. Attempted to move Buy lot before a Sell lot.', domain: 'DOMAIN_SERVICE');
+      if (barrierDates.isNotEmpty) {
+        final latestBarrierDate = barrierDates.reduce((a, b) => a.isAfter(b) ? a : b);
+
+        // [MANTIK]: Yeni tarih, mevcut FIFO sıralamasını bozacak kadar eskiye gidemez
+        if (newDate.isBefore(latestBarrierDate)) {
+          AppLog.warning('FIFO Sequence Paradox prevented.', domain: 'DOMAIN_SERVICE');
           throw Exception(
-              "Tarih Hatası: Bu işlemin tarihi, bu varlığa ait son satış işleminden "
-                  "(${latestSellDate.day}/${latestSellDate.month}/${latestSellDate.year}) daha eskiye alınamaz. FIFO sıralaması bozulur."
+              "Tarih Hatası: Bu işlemin tarihi, bu varlığa ait önceki işlemlerden "
+                  "(${latestBarrierDate.day}/${latestBarrierDate.month}/${latestBarrierDate.year}) daha eskiye alınamaz."
           );
         }
       }
@@ -171,9 +176,7 @@ class PortfolioService {
         purchaseDate: newDate,
         note: newNote,
       );
-      AppLog.info('Full financial update executed for untouched transaction: ${originalTx.id}', domain: 'DOMAIN_SERVICE');
     }
-
     await _tr.update(updatedTx);
   }
 

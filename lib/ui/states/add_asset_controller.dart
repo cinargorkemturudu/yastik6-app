@@ -7,6 +7,9 @@ import 'package:yastik_alti/ui/states/live_price_provider.dart';
 import 'package:yastik_alti/ui/states/portfolio_provider.dart';
 import 'package:yastik_alti/di/providers.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
+
+import 'asset_history_provider.dart';
 
 class AddAssetState {
   final TransactionType transactionType;
@@ -55,7 +58,7 @@ final addAssetControllerProvider = NotifierProvider<AddAssetController, AddAsset
 class AddAssetController extends Notifier<AddAssetState> {
   @override
   AddAssetState build() {
-    AppLog.debug('AddAsset (Yeni Tek Ekran) başlatıldı', domain: 'UI_STATE');
+    AppLog.debug('AddAsset controller initialized', domain: 'UI_STATE');
     return AddAssetState(date: DateTime.now());
   }
 
@@ -83,7 +86,6 @@ class AddAssetController extends Notifier<AddAssetState> {
   }
 
   void selectAsset(PriceQuote? quote) {
-    // [FIXED]: Directly handle Decimal values without intermediate double casts
     final priceValue = quote != null
         ? (state.transactionType == TransactionType.buy ? quote.ask : quote.bid)
         : Decimal.zero;
@@ -96,16 +98,16 @@ class AddAssetController extends Notifier<AddAssetState> {
   }
 
   void updateAmount(String val) {
-    final dec = Decimal.tryParse(val.replaceAll(',', '.')) ?? Decimal.zero;
+    final dec = AppFormatter.parseInput(val);
     state = state.copyWith(amount: dec, clearError: true);
   }
 
   void updatePrice(String val) {
-    final dec = Decimal.tryParse(val.replaceAll(',', '.')) ?? Decimal.zero;
+    final dec = AppFormatter.parseInput(val);
     state = state.copyWith(price: dec, clearError: true);
   }
 
-  void updateDate(DateTime val) {
+  void updateDate(DateTime val) async {
     final now = DateTime.now();
     final dateWithTime = DateTime(
       val.year,
@@ -115,7 +117,29 @@ class AddAssetController extends Notifier<AddAssetState> {
       now.minute,
       now.second,
     );
+
+    // Önce tarihi güncelle
     state = state.copyWith(date: dateWithTime);
+
+    // [YENİ]: Tarih değişince geçmiş fiyatı otomatik sorgula
+    if (state.selectedAsset != null) {
+      try {
+        final params = HistoricalPriceParams(
+            assetCode: state.selectedAsset!.assetCode,
+            date: dateWithTime
+        );
+
+        // Provider üzerinden o tarihteki fiyatı oku
+        final historicalPrice = await ref.read(historicalPriceProvider(params).future);
+
+        if (historicalPrice != null && historicalPrice > Decimal.zero) {
+          state = state.copyWith(price: historicalPrice);
+          AppLog.info('Historical price auto-synced for ${state.selectedAsset!.assetCode}', domain: 'UI_STATE');
+        }
+      } catch (e) {
+        AppLog.warning('Could not fetch historical price for the selected date.', domain: 'UI_STATE');
+      }
+    }
   }
 
   void updateNote(String val) => state = state.copyWith(note: val);
@@ -152,12 +176,11 @@ class AddAssetController extends Notifier<AddAssetState> {
       state = AddAssetState(date: DateTime.now());
 
       ref.read(portfolioProvider.notifier).refreshDb();
-
       AppLog.insight('transaction_saved', metadata: {'type': state.transactionType.name});
 
       return true;
     } catch (e, stackTrace) {
-      AppLog.error("İşlem kaydedilemedi", domain: 'UI_STATE', error: e, stackTrace: stackTrace);
+      AppLog.error("Transaction save failed", domain: 'UI_STATE', error: e, stackTrace: stackTrace);
 
       String errorMessage = AppStrings.messages.transactionFailed;
       if (e.toString().contains('INSUFFICIENT_BALANCE')) {

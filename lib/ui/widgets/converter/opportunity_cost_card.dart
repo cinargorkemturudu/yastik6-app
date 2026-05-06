@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart'; // [FIXED] Added missing import
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -13,10 +14,10 @@ import 'package:yastik_alti/domain/models/entities/asset.dart';
 import '../../utils/app_safe_text.dart';
 
 class OpportunityCostCard extends ConsumerWidget {
-  final double amount;
+  final Decimal amount; // [FIXED] Type
   final PriceQuote fromAsset;
   final PriceQuote toAsset;
-  final double currentResult;
+  final Decimal currentResult; // [FIXED] Type
   final DateTime? selectedDate;
   final Function(DateTime) onDateSelected;
 
@@ -119,17 +120,22 @@ class OpportunityCostCard extends ConsumerWidget {
       );
     }
 
-    final pastFromPrice = fromPriceAsync.valueOrNull;
-    final pastToPrice = toPriceAsync.valueOrNull;
+    final Decimal? pastFromPrice = fromPriceAsync.valueOrNull;
+    final Decimal? pastToPrice = toPriceAsync.valueOrNull;
 
-    if (pastFromPrice == null || pastToPrice == null) {
+    if (pastFromPrice == null || pastToPrice == null || pastToPrice <= Decimal.zero) {
       return Text(AppStrings.messages.noPastDataFound,
           style: AppTextStyles.caption.copyWith(color: AppColors.lossAccent));
     }
 
-    double pastResult = amount * (pastFromPrice / pastToPrice);
-    double netDiff = currentResult - pastResult;
-    double percentDiff = pastResult == 0 ? 0 : (netDiff / pastResult);
+    // [FIXED] Conduct financial parity operations strictly in Rational/Decimal space
+    Decimal parity = (pastFromPrice.toRational() / pastToPrice.toRational()).toDecimal(scaleOnInfinitePrecision: 10);
+    Decimal pastResult = amount * parity;
+
+    Decimal netDiff = currentResult - pastResult;
+    double percentDiff = pastResult == Decimal.zero
+        ? 0.0
+        : (netDiff.toRational() / pastResult.toRational()).toDouble();
 
     bool isProfit = percentDiff >= 0;
     Color trendColor = isProfit ? AppColors.profitAccent : AppColors.lossAccent;
@@ -165,7 +171,7 @@ class OpportunityCostCard extends ConsumerWidget {
               // [DÜZELTİLDİ]: Büyük rakamların taşmasını önlemek için Flexible
               Flexible(
                 child: Text(
-                  AppFormatter.amount(pastResult, ""),
+                  AppFormatter.amount(pastResult, ""), // [FIXED] Safely cast to double at the UI boundary
                   style: AppTextStyles.h2.copyWith(fontSize: 18),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -196,7 +202,7 @@ class OpportunityCostCard extends ConsumerWidget {
               // [DÜZELTİLDİ]: Kar/zarar oranının taşmasını önlemek için Flexible
               Flexible(
                 child: Text(
-                  "${AppStrings.converter.difference} ${isProfit ? '+' : ''}${AppFormatter.amount(netDiff.abs(), "")} (${AppFormatter.signedPercent(percentDiff)})",
+                  "${AppStrings.converter.difference} ${AppFormatter.signedAmount(netDiff)} (${AppFormatter.signedPercent(percentDiff)})",
                   style: AppTextStyles.bodyLarge.copyWith(color: trendColor, fontWeight: FontWeight.bold),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

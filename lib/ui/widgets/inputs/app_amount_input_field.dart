@@ -9,6 +9,7 @@ import '../../utils/font_scale.dart';
 class AppAmountInputField extends StatelessWidget {
   final String? label;
   final TextEditingController textController;
+  final FocusNode? focusNode;
   final Function(String)? onChanged;
   final String? suffixText;
   final Widget? prefixWidget;
@@ -21,6 +22,7 @@ class AppAmountInputField extends StatelessWidget {
     super.key,
     this.label,
     required this.textController,
+    this.focusNode,
     this.onChanged,
     this.suffixText,
     this.prefixWidget,
@@ -71,6 +73,7 @@ class AppAmountInputField extends StatelessWidget {
 
                     return TextField(
                       controller: textController,
+                      focusNode: focusNode,
                       enabled: enabled,
                       keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),

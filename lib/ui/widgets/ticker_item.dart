@@ -3,6 +3,8 @@ import '../ui_models/current_rates_ticker_model.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 
+import '../utils/app_formatter.dart';
+
 class TickerItem extends StatelessWidget {
   final TickerItemUiModel model;
   const TickerItem({super.key, required this.model});

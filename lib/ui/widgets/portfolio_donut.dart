@@ -119,20 +119,46 @@ class _Legend extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppDimens.p6),
       child: Row(
         children: [
-          Container(width: AppDimens.legendCircle, height: AppDimens.legendCircle, decoration: BoxDecoration(color: i.color, shape: BoxShape.circle)),
+          Container(
+              width: AppDimens.legendCircle,
+              height: AppDimens.legendCircle,
+              decoration: BoxDecoration(color: i.color, shape: BoxShape.circle)
+          ),
           const SizedBox(width: AppDimens.p8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(i.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                // [FIXED] AppFormatter.pnlValue expects double here
-                Text("${AppFormatter.pnlValue(i.pnlTl.toDouble())} (${AppFormatter.percent(i.pnlPct)})", style: TextStyle(color: i.pnlTl.toDouble().toPnlColor(), fontSize: 11)),
+                Text(
+                    i.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)
+                ),
+                Text(
+                    "${AppFormatter.pnlValue(i.pnlTl)} (${AppFormatter.percent(i.pnlPct)})",
+                    style: TextStyle(color: i.pnlTl.toPnlColor(), fontSize: 11)
+                ),
               ],
             ),
           ),
           const SizedBox(width: AppDimens.p6),
-          Text(i.tlValue.toDouble().toStringAsFixed(0), style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          // [DÜZELTİLDİ]: Fiyat ve Miktar yan yana değil, alt alta sütun olarak yapılandırıldı
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                  "${AppFormatter.amount(i.tlValue, "")} TL",
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)
+              ),
+              // [YENİ]: Miktar alanı fiyatın altına taşındı
+              Text(
+                  "${AppFormatter.amount(i.quantity, "")} adet",
+                  style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7), fontSize: 10)
+              ),
+            ],
+          ),
         ],
       ),
     );

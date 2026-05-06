@@ -14,7 +14,6 @@ import 'package:yastik_alti/ui/widgets/converter/market_mode_toggle.dart';
 import 'package:yastik_alti/ui/widgets/converter/opportunity_cost_card.dart';
 import 'package:yastik_alti/ui/widgets/inputs/app_amount_input_field.dart';
 import 'package:yastik_alti/ui/widgets/universal_asset_picker_sheet.dart';
-
 import '../utils/app_safe_text.dart';
 
 class ConverterScreen extends ConsumerStatefulWidget {
@@ -27,19 +26,38 @@ class ConverterScreen extends ConsumerStatefulWidget {
 class _ConverterScreenState extends ConsumerState<ConverterScreen> {
   late final TextEditingController _sellAmountCtrl;
   late final TextEditingController _buyAmountCtrl;
+  final FocusNode _sellFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    final initialAmount = ref.read(converterViewModelProvider).amount;
-    _sellAmountCtrl = TextEditingController(text: initialAmount > Decimal.zero ? initialAmount.toString() : '');
-    _buyAmountCtrl = TextEditingController();
+
+    final state = ref.read(converterViewModelProvider);
+    final initialAmount = state.amount;
+    final initialResult = ref.read(converterResultProvider);
+
+    // [FIXED] Determine precision based on asset type to avoid rounding on load[cite: 2, 3]
+    final sellPrecision = state.fromAsset?.type == AssetType.crypto ? 4 : 2;
+    final buyPrecision = state.toAsset?.type == AssetType.crypto ? 4 : 2;
+
+    _sellAmountCtrl = TextEditingController(
+        text: initialAmount > Decimal.zero
+            ? AppFormatter.amount(initialAmount, "", precision: sellPrecision)
+            : ''
+    );
+
+    _buyAmountCtrl = TextEditingController(
+        text: initialResult > Decimal.zero
+            ? AppFormatter.amount(initialResult, "", precision: buyPrecision)
+            : ''
+    );
   }
 
   @override
   void dispose() {
     _sellAmountCtrl.dispose();
     _buyAmountCtrl.dispose();
+    _sellFocusNode.dispose();
     super.dispose();
   }
 
@@ -49,17 +67,26 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
     final viewModel = ref.read(converterViewModelProvider.notifier);
     final result = ref.watch(converterResultProvider);
 
+    // Update Output whenever the math result changes
     ref.listen<Decimal>(converterResultProvider, (previous, next) {
       if (previous != next) {
-        _buyAmountCtrl.text = next.toDouble().toStringAsFixed(4);
+        final buyPrecision = state.toAsset?.type == AssetType.crypto ? 4 : 2;
+        _buyAmountCtrl.text = next > Decimal.zero
+            ? AppFormatter.amount(next, "", precision: buyPrecision)
+            : '';
       }
     });
 
+    // Update Input ONLY if the change came from an external source (like the Swap button)
     ref.listen(converterViewModelProvider, (prev, next) {
       if (prev?.amount != next.amount) {
-        final currentTextValue = Decimal.tryParse(_sellAmountCtrl.text.replaceAll(',', '.')) ?? Decimal.zero;
-        if (currentTextValue != next.amount) {
-          final newString = next.amount > Decimal.zero ? next.amount.toString() : '';
+        final currentTextValue = AppFormatter.parseInput(_sellAmountCtrl.text);
+
+        if (currentTextValue != next.amount && !_sellFocusNode.hasFocus) {
+          final sellPrecision = next.fromAsset?.type == AssetType.crypto ? 4 : 2;
+          final newString = next.amount > Decimal.zero
+              ? AppFormatter.amount(next.amount, "", precision: sellPrecision)
+              : '';
           _sellAmountCtrl.value = TextEditingValue(
             text: newString,
             selection: TextSelection.collapsed(offset: newString.length),
@@ -96,7 +123,8 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                 quote: state.fromAsset,
                 isInput: true,
                 controller: _sellAmountCtrl,
-                onAmountChanged: (val) => viewModel.updateAmount(Decimal.tryParse(val.replaceAll(',', '.')) ?? Decimal.zero),
+                focusNode: _sellFocusNode,
+                onAmountChanged: (val) => viewModel.updateAmount(AppFormatter.parseInput(val)),
                 onAssetSelected: viewModel.updateFromAsset,
               ),
               Padding(
@@ -104,7 +132,10 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                 child: Center(
                   child: IconButton(
                     icon: const Icon(Icons.swap_vert, color: AppColors.brandBlue, size: 32),
-                    onPressed: viewModel.swapAssets,
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      viewModel.swapAssets();
+                    },
                   ),
                 ),
               ),
@@ -119,10 +150,10 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
               const SizedBox(height: AppDimens.p24),
               if (state.fromAsset != null && state.toAsset != null)
                 OpportunityCostCard(
-                  amount: state.amount.toDouble(),
+                  amount: state.amount,
                   fromAsset: state.fromAsset!,
                   toAsset: state.toAsset!,
-                  currentResult: result.toDouble(),
+                  currentResult: result,
                   selectedDate: state.historicalDate,
                   onDateSelected: viewModel.updateHistoricalDate,
                 ),
@@ -139,6 +170,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
     required PriceQuote? quote,
     required bool isInput,
     required TextEditingController controller,
+    FocusNode? focusNode,
     Function(String)? onAmountChanged,
     required Function(PriceQuote) onAssetSelected,
   }) {
@@ -166,6 +198,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
       label: title,
       textController: controller,
       enabled: isInput,
+      focusNode: focusNode,
       textAlign: TextAlign.right,
       textStyle: AppTextStyles.heroAmount.copyWith(
           fontSize: 24,
@@ -175,7 +208,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
       prefixWidget: GestureDetector(
         onTap: () => _showAssetPicker(context, ref, onAssetSelected),
         child: Container(
-          // [DÜZELTİLDİ]: Katı genişlik kısıtlaması kaldırıldı, alan yönetimi Flexible'a bırakıldı
           padding: const EdgeInsets.symmetric(horizontal: AppDimens.p12, vertical: AppDimens.p8),
           decoration: BoxDecoration(
             color: AppColors.surfaceLight,
@@ -191,7 +223,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                 ),
                 const SizedBox(width: AppDimens.p8),
               ],
-              // [DÜZELTİLDİ]: Uzun borsa kodları için güvenli metin bileşeni
               AppSafeText(
                 displayTitle,
                 style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
@@ -205,16 +236,15 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
       footer: quote != null
           ? Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start, // [DÜZELTİLDİ]: Çok satırlı metinlerde üstten hizalama
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // [DÜZELTİLDİ]: Alt başlıklar çok uzunsa (Ereğli Demir Çelik vb.) 2 satıra inmesine izin verildi
           AppSafeText(
             displaySubtitle ?? "",
-            style: AppTextStyles.caption.copyWith(height: 1.2), // Okunabilirlik için satır aralığı
+            style: AppTextStyles.caption.copyWith(height: 1.2),
             maxLines: 2,
           ),
           const SizedBox(width: AppDimens.p12),
-          Text("${AppStrings.labels.buy}: ${quote.formattedBid}", style: AppTextStyles.caption),
+          Text("${AppStrings.labels.buy}: ${AppFormatter.amount(quote.bid, "", precision: quote.type == AssetType.crypto ? 4 : 2)} TL", style: AppTextStyles.caption),
         ],
       )
           : null,

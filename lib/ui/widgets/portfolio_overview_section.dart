@@ -13,7 +13,9 @@ import 'package:yastik_alti/ui/mappers/universal_portfolio_mapper.dart';
 import '../../domain/models/entities/transaction.dart';
 import '../states/live_price_provider.dart';
 import '../theme/app_text_style.dart';
+import '../utils/app_formatter.dart';
 import 'current_rates_ticker_section.dart';
+import 'edit_transaction/edit_transaction_sheet.dart';
 import 'portfolio_donut.dart';
 import 'package:yastik_alti/ui/widgets/recent_lots_section.dart';
 import 'package:yastik_alti/ui/screens/history_screen.dart';
@@ -57,9 +59,14 @@ class PortfolioOverviewSection extends ConsumerWidget {
         allLots = UniversalPortfolioMapper.toRealizedLotUiModels(summary: summary, assetNames: assetNames, assetFilter: filterType);
       } else {
         currentDonut = PortfolioDonutModel(
-            totalTl: Decimal.zero, totalPnlTl: Decimal.zero, totalPnlPct: 0,
-            totalValueText: "0,00 TL", totalPnlText: "0,00 TL (%0,00)",
-            pnlColor: AppColors.textPrimary, items: []
+            totalTl: Decimal.zero,
+            totalPnlTl: Decimal.zero,
+            totalPnlPct: 0,
+            totalValueText: AppFormatter.money(Decimal.zero),
+            // [FIXED] Added the missing required parameter here
+            totalPnlText: "${AppFormatter.pnlValue(Decimal.zero)} (${AppFormatter.signedPercent(0)})",
+            pnlColor: AppColors.textPrimary,
+            items: []
         );
         allLots = [];
       }
@@ -115,8 +122,6 @@ class PortfolioOverviewSection extends ConsumerWidget {
               ),
               const SizedBox(height: AppDimens.p10),
 
-              // [DÜZELTİLDİ]: Milyonluk bakiyelerin ekrandan taşmasını engellemek için FittedBox kullanıldı.
-              // Rakamlar asla "..." ile kesilmez, sadece sığacak kadar küçülür.
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
@@ -167,11 +172,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
                     );
                   },
                   onDelete: (id) => _showDeleteConfirmDialog(context, vmNotifier, id),
-                  onEdit: (id) async {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(AppStrings.messages.editUnderConstruction)),
-                    );
-                  },
+                  onEdit: (id) => EditTransactionSheet.show(context, ref, transactionId: id), // [FIXED]: Artık sayfayı açıyor
                 ),
               const SizedBox(height: AppDimens.p40),
             ],
