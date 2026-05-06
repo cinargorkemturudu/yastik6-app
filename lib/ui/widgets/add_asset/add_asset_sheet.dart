@@ -8,7 +8,9 @@ import 'package:yastik_alti/ui/theme/app_dimens.dart'; // [EKLENDİ]
 import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
 import 'package:yastik_alti/ui/widgets/universal_asset_picker_sheet.dart';
 import 'package:yastik_alti/ui/utils/asset_visual_mapper.dart';
+import '../../../domain/models/entities/asset.dart';
 import '../../theme/app_strings.dart';
+import '../../utils/app_formatter.dart';
 import 'asset_form_step.dart';
 
 class AddAssetSheet extends ConsumerWidget {
@@ -107,10 +109,12 @@ class AddAssetSheet extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(state.selectedAsset!.name, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),                            Text(
+                            Text(state.selectedAsset!.name, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
+                            // [FIXED] Converted the domain decimals into formatted text right here in the UI.
+                            Text(
                                 state.transactionType == TransactionType.buy
-                                    ? "${AppStrings.form.currentSellRate}: ${state.selectedAsset!.formattedAsk}"
-                                    : "${AppStrings.form.currentBuyRate}: ${state.selectedAsset!.formattedBid}",
+                                    ? "${AppStrings.form.currentSellRate}: ${AppFormatter.amount(state.selectedAsset!.ask, "", precision: state.selectedAsset!.type == AssetType.crypto ? 4 : 2)} TL"
+                                    : "${AppStrings.form.currentBuyRate}: ${AppFormatter.amount(state.selectedAsset!.bid, "", precision: state.selectedAsset!.type == AssetType.crypto ? 4 : 2)} TL",
                                 style: AppTextStyles.caption
                             ),
                           ],

@@ -170,7 +170,7 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                         break;
                     }
 
-                    final displayPrice = AppFormatter.money(isSellingFlow ? quote.bid.toDouble() : quote.ask.toDouble());
+                    final displayPrice = AppFormatter.money(isSellingFlow ? quote.bid : quote.ask);
                     final trailingSubtitle = isSellingFlow ? AppStrings.form.currentBuyRate : AppStrings.form.currentSellRate;
 
                     return AppAssetListTile(

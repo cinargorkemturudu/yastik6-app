@@ -1,16 +1,16 @@
 import 'package:decimal/decimal.dart';
 import 'package:yastik_alti/domain/models/entities/asset.dart';
-import 'package:yastik_alti/ui/utils/app_formatter.dart';
+// [FIXED] Removed the AppFormatter import. Domain should be UI-agnostic.
 
 class PriceQuote {
   final String assetCode;
   final String name;
   final AssetType type;
-
   final Decimal bid;
   final Decimal ask;
-  String get formattedBid => AppFormatter.money(bid.toDouble());
-  String get formattedAsk => AppFormatter.money(ask.toDouble());
+
+  // [FIXED] Removed formattedBid and formattedAsk getters entirely.
+
   final double changeRate; // Kept as double (Ratio)
   final DateTime asOf;
   final DateTime expiresAt;
@@ -26,14 +26,13 @@ class PriceQuote {
     required this.expiresAt,
   });
 
-  // Multiplying by 0.5 is safe in Decimal (avoids infinite division crashes)
   Decimal get midPrice => (bid + ask) * Decimal.parse('0.5');
+
   Decimal get spread => ask - bid;
 
   bool get isStale {
     final nowLocal = DateTime.now();
     final asOfLocal = asOf.toLocal();
-
     final diff = nowLocal.difference(asOfLocal);
     final diffInMinutes = diff.inMinutes;
     final diffInHours = diff.inHours;

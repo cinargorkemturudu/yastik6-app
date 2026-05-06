@@ -15,15 +15,12 @@ class UniversalPortfolioMapper {
 
   // HELPER METHOD: Centralizes the presentation logic for Lot titles
   static String _formatLotTitle(AssetType type, String rawName, String symbol) {
-    // [DÜZELTİLDİ]: Hisseler için uzun isim yerine sembol (Örn: THYAO) gösterilir
     if (type == AssetType.stock) {
       return symbol;
     }
-    // Madenler için isim (Altın vb.) devam
     if (type == AssetType.metal) {
       return rawName;
     }
-    // Cleans "USD" and formats Crypto/Currency symbols
     return AppFormatter.cleanAssetCode(symbol);
   }
 
@@ -59,10 +56,11 @@ class UniversalPortfolioMapper {
 
           return SubTransactionUiModel(
             date: AppFormatter.date(date),
-            amount: AppFormatter.amount(amount.toDouble(), pos.asset.symbol),
-            price: AppFormatter.money(sellPrice.toDouble()),
-            profitText: AppFormatter.pnlValue(profit.toDouble()),
-            profitColor: profit.toDouble().toPnlColor(),
+            amount: AppFormatter.amount(amount, pos.asset.symbol),
+            price: AppFormatter.money(sellPrice),
+            profitText: AppFormatter.pnlValue(profit),
+            // [FIXED] Removed .toDouble() leftover
+            profitColor: profit.toPnlColor(),
           );
         }).toList();
 
@@ -74,16 +72,17 @@ class UniversalPortfolioMapper {
           assetName: rawName,
           symbol: pos.asset.symbol,
           type: pos.asset.type,
-          displayTitle: displayTitle, // INJECTED FORMATTED TITLE
+          displayTitle: displayTitle,
           amountValue: tx.remainingAmount,
-          originalAmountText: AppFormatter.amount(tx.amount.toDouble(), pos.asset.symbol),
-          remainingAmountText: AppFormatter.amount(tx.remainingAmount.toDouble(), pos.asset.symbol),
-          soldAmountText: AppFormatter.amount((tx.amount - tx.remainingAmount).toDouble(), pos.asset.symbol),
-          buyPriceText: AppFormatter.money(tx.purchasePrice.toDouble()),
-          totalCostText: AppFormatter.money(lotProfit.cost.toDouble()),
+          originalAmountText: AppFormatter.amount(tx.amount, pos.asset.symbol),
+          remainingAmountText: AppFormatter.amount(tx.remainingAmount, pos.asset.symbol),
+          soldAmountText: AppFormatter.amount((tx.amount - tx.remainingAmount), pos.asset.symbol),
+          buyPriceText: AppFormatter.money(tx.purchasePrice),
+          totalCostText: AppFormatter.money(lotProfit.cost),
           profitPercent: AppFormatter.signedPercent(lotProfit.profitPct),
-          currentUnrealizedPnl: AppFormatter.pnlValue(lotProfit.profit.toDouble()),
-          unrealizedColor: lotProfit.profit.toDouble().toPnlColor(),
+          currentUnrealizedPnl: AppFormatter.pnlValue(lotProfit.profit),
+          // [FIXED] Removed .toDouble() leftover
+          unrealizedColor: lotProfit.profit.toPnlColor(),
           totalRealizedPnl: null,
           realizedColor: null,
           progressVal: tx.amount == Decimal.zero ? 0.0 : (tx.remainingAmount.toRational() / tx.amount.toRational()).toDouble(),
@@ -121,13 +120,13 @@ class UniversalPortfolioMapper {
         assetName: rawName,
         symbol: tx.assetId,
         type: type,
-        displayTitle: displayTitle, // INJECTED FORMATTED TITLE
+        displayTitle: displayTitle,
         amountValue: tx.amount,
-        originalAmountText: AppFormatter.amount(tx.amount.toDouble(), tx.assetId),
-        remainingAmountText: AppFormatter.amount(tx.remainingAmount.toDouble(), tx.assetId),
-        soldAmountText: AppFormatter.amount(0.0, tx.assetId),
-        buyPriceText: AppFormatter.money(tx.purchasePrice.toDouble()),
-        totalCostText: AppFormatter.money((tx.amount * tx.purchasePrice).toDouble()),
+        originalAmountText: AppFormatter.amount(tx.amount, tx.assetId),
+        remainingAmountText: AppFormatter.amount(tx.remainingAmount, tx.assetId),
+        soldAmountText: AppFormatter.amount(Decimal.zero, tx.assetId),
+        buyPriceText: AppFormatter.money(tx.purchasePrice),
+        totalCostText: AppFormatter.money((tx.amount * tx.purchasePrice)),
         profitPercent: "",
         currentUnrealizedPnl: "",
         unrealizedColor: AppColors.textPrimary,
@@ -157,20 +156,21 @@ class UniversalPortfolioMapper {
       totalTl: totalTl,
       totalPnlTl: totalPnlTl,
       totalPnlPct: totalPnlPct,
-      totalValueText: AppFormatter.money(totalTl.toDouble()),
-      totalPnlText: "${AppFormatter.pnlValue(totalPnlTl.toDouble())} (${AppFormatter.signedPercent(totalPnlPct)})",
-      pnlColor: totalPnlTl.toDouble().toPnlColor(),
+      totalValueText: AppFormatter.money(totalTl),
+      totalPnlText: "${AppFormatter.pnlValue(totalPnlTl)} (${AppFormatter.signedPercent(totalPnlPct)})",
+      // [FIXED] Removed .toDouble() leftover
+      pnlColor: totalPnlTl.toPnlColor(),
       items: items.map((pos) {
         final rawName = assetNames[pos.asset.symbol] ?? pos.asset.name;
         final isStock = pos.asset.type == AssetType.stock;
         final isMetal = pos.asset.type == AssetType.metal;
 
-        // [DÜZELTİLDİ]: Hisseler için Legend'da (Grafik altında) sembol önceliklendirildi
         final displayName = isStock ? pos.asset.symbol : (isMetal ? rawName : AppFormatter.cleanAssetCode(pos.asset.symbol));
 
         return PortfolioDonutItem(
           type: pos.asset.type,
           title: displayName,
+          quantity: pos.totalAmount, // [FIXED] Mapping quantity
           tlValue: pos.currentValue,
           pnlTl: pos.profit,
           pnlPct: pos.profitPct,
@@ -193,20 +193,21 @@ class UniversalPortfolioMapper {
       totalTl: totalTl,
       totalPnlTl: totalTl,
       totalPnlPct: summary.totalPnlPct,
-      totalValueText: AppFormatter.money(totalTl.toDouble()),
-      totalPnlText: "${AppFormatter.pnlValue(totalTl.toDouble())} (${AppFormatter.signedPercent(summary.totalPnlPct)})",
-      pnlColor: totalTl.toDouble().toPnlColor(),
+      totalValueText: AppFormatter.money(totalTl),
+      totalPnlText: "${AppFormatter.pnlValue(totalTl)} (${AppFormatter.signedPercent(summary.totalPnlPct)})",
+      // [FIXED] Removed .toDouble() leftover[cite: 3]
+      pnlColor: totalTl.toPnlColor(),
       items: items.map((asset) {
         final rawName = assetNames[asset.symbol] ?? asset.symbol;
         final isStock = asset.assetType == AssetType.stock;
         final isMetal = asset.assetType == AssetType.metal;
 
-        // [DÜZELTİLDİ]: Hisseler için Legend'da (Grafik altında) sembol önceliklendirildi
         final displayName = isStock ? asset.symbol : (isMetal ? rawName : AppFormatter.cleanAssetCode(asset.symbol));
 
         return PortfolioDonutItem(
           type: asset.assetType,
           title: displayName,
+          quantity: asset.totalAmountSold, // [FIXED] Mapping quantity
           tlValue: asset.totalProfit,
           pnlTl: asset.totalProfit,
           pnlPct: asset.itemPnlPct,
@@ -238,16 +239,17 @@ class UniversalPortfolioMapper {
           assetName: rawName,
           symbol: assetSummary.symbol,
           type: assetSummary.assetType,
-          displayTitle: displayTitle, // INJECTED FORMATTED TITLE
+          displayTitle: displayTitle,
           amountValue: Decimal.zero,
-          originalAmountText: AppFormatter.amount(tx.amountSold.toDouble(), assetSummary.symbol),
-          remainingAmountText: "0.00",
-          soldAmountText: AppFormatter.amount(tx.amountSold.toDouble(), assetSummary.symbol),
-          buyPriceText: AppFormatter.money(tx.avgBuyPrice.toDouble()),
-          totalCostText: AppFormatter.money((tx.sellPrice * tx.amountSold).toDouble()),
+          originalAmountText: AppFormatter.amount(tx.amountSold, assetSummary.symbol),
+          remainingAmountText: AppFormatter.amount(Decimal.zero, ""),
+          soldAmountText: AppFormatter.amount(tx.amountSold, assetSummary.symbol),
+          buyPriceText: AppFormatter.money(tx.avgBuyPrice),
+          totalCostText: AppFormatter.money((tx.sellPrice * tx.amountSold)),
           profitPercent: AppFormatter.signedPercent(tx.profitPct),
-          totalRealizedPnl: AppFormatter.pnlValue(tx.profit.toDouble()),
-          realizedColor: tx.profit.toDouble().toPnlColor(),
+          totalRealizedPnl: AppFormatter.pnlValue(tx.profit),
+          // [FIXED] Removed .toDouble() leftover[cite: 3]
+          realizedColor: tx.profit.toPnlColor(),
           currentUnrealizedPnl: null,
           unrealizedColor: null,
           progressVal: 0.0,

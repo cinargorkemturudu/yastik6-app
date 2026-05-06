@@ -1,5 +1,3 @@
-// lib/ui/widgets/edit_transaction/edit_transaction_sheet.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/domain/models/entities/transaction.dart';
@@ -11,20 +9,14 @@ import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
 import 'package:yastik_alti/ui/utils/asset_visual_mapper.dart';
 import 'package:yastik_alti/ui/widgets/edit_transaction/edit_transaction_form_step.dart';
-
 import '../../../domain/models/entities/asset.dart';
 import '../../states/portfolio_provider.dart';
 
-/// A secure BottomSheet wrapper for the transaction editing module.
 class EditTransactionSheet extends ConsumerWidget {
   const EditTransactionSheet({super.key});
 
-  /// Triggers the edit flow by initializing the controller and displaying the BottomSheet.
   static void show(BuildContext context, WidgetRef ref, {required String transactionId}) {
-    // 1. Ignite the Engine: Start fetching data securely before the sheet fully animates up.
     ref.read(editTransactionControllerProvider.notifier).loadTransaction(transactionId);
-
-    // 2. Open the Sheet.
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -37,12 +29,13 @@ class EditTransactionSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(editTransactionControllerProvider);
     final portfolio = ref.watch(portfolioProvider);
+
+    // İşlemin ait olduğu varlığın tipini bul (Avatar için)
     final assetType = portfolio.snapshot.positions
         .where((p) => p.asset.id == state.originalTx?.assetId)
         .firstOrNull?.asset.type ?? AssetType.metal;
 
     return GestureDetector(
-      // Dismiss the keyboard when tapping outside the form fields.
       onTap: () => FocusScope.of(context).unfocus(),
       child: Container(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -56,10 +49,8 @@ class EditTransactionSheet extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Drag Handle
                 Container(
-                    width: 40,
-                    height: 4,
+                    width: 40, height: 4,
                     decoration: BoxDecoration(
                         color: AppColors.textMuted.withValues(alpha: AppAlphas.borderLight),
                         borderRadius: BorderRadius.circular(AppDimens.radiusXs)
@@ -67,11 +58,10 @@ class EditTransactionSheet extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppDimens.p24),
 
-                // THE STATIC HEADER
-                // This replaces the interactive AssetPicker from the Add flow, 
-                // as users cannot mutate the asset type of an existing transaction.
+                // [STATİK BAŞLIK]: İşlem düzenlemede varlık tipi değiştirilemez.
                 AppOutlinedCard(
                   padding: const EdgeInsets.all(AppDimens.p12),
+                  backgroundColor: state.isAllocated ? AppColors.surface.withValues(alpha: 0.5) : null,
                   child: Row(
                     children: [
                       if (state.originalTx != null) ...[
@@ -79,7 +69,7 @@ class EditTransactionSheet extends ConsumerWidget {
                           width: 32, height: 32,
                           child: AssetVisualMapper.getAvatar(
                             assetCode: state.originalTx!.assetId,
-                            type: assetType, // THE FIX: Parameter added
+                            type: assetType,
                           ),
                         ),
                         const SizedBox(width: AppDimens.p12),
@@ -104,17 +94,18 @@ class EditTransactionSheet extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        // Visual indicator that the asset type itself is permanently locked
-                        const Icon(Icons.lock_outline, color: AppColors.textMuted, size: 18),
+                        // [GÖRSEL GERİ BİLDİRİM]: Satış yapılmış işlemler için kilit ikonu
+                        if (state.isAllocated)
+                          const Icon(Icons.lock_outline, color: AppColors.textMuted, size: 18)
+                        else
+                          const Icon(Icons.edit, color: AppColors.textMuted, size: 18),
                       ] else ...[
-                        const SizedBox(width: 32, height: 32, child: CircularProgressIndicator()),
+                        const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 2)),
                       ]
                     ],
                   ),
                 ),
                 const SizedBox(height: AppDimens.p16),
-
-                // THE SECURE FORM
                 const Flexible(
                   child: SingleChildScrollView(
                     child: EditTransactionFormStep(),

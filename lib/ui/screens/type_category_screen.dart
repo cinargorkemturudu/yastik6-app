@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart'; // [FIXED] Added missing import for Decimal
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/domain/models/entities/asset.dart';
@@ -46,8 +47,9 @@ class CategoryDetailScreen extends ConsumerWidget {
       return p.assetType == categoryType;
     }).toList();
 
-    final double totalValue = positions.fold(0.0, (sum, p) => sum + p.currentValue.toDouble());
-    final double totalProfit = positions.fold(0.0, (sum, p) => sum + p.profit.toDouble());
+    // [FIXED]: Accumulate securely in Decimal space to prevent floating-point loss
+    final Decimal totalValue = positions.fold(Decimal.zero, (sum, p) => sum + p.currentValue);
+    final Decimal totalProfit = positions.fold(Decimal.zero, (sum, p) => sum + p.profit);
 
     // [DÜZELTİLDİ]: Sunum mantığı modele aktarılırken uygulandı
     final items = positions.map((p) {
@@ -76,13 +78,13 @@ class CategoryDetailScreen extends ConsumerWidget {
         assetId: p.asset.id,
         type: p.assetType,
         title: rawName,
-        amountText: p.totalAmount.toDouble().toStringAsFixed(2),
-        currentPriceText: AppFormatter.money(p.currentPrice.toDouble()),
-        totalValueText: AppFormatter.money(p.currentValue.toDouble()),
+        amountText: AppFormatter.amount(p.totalAmount, ""),
+        currentPriceText: AppFormatter.money(p.currentPrice),
+        totalValueText: AppFormatter.money(p.currentValue),
         pnlPercent: AppFormatter.percent(p.profitPct),
-        pnlColor: p.profit.toDouble().toPnlColor(),
-        avgCostText: AppFormatter.money(p.averageBuyPrice.toDouble()),
-        pnlValueText: AppFormatter.pnlValue(p.profit.toDouble()),
+        pnlColor: p.profit.toPnlColor(),
+        avgCostText: AppFormatter.money(p.averageBuyPrice),
+        pnlValueText: AppFormatter.pnlValue(p.profit),
         // FORMATLANMIŞ VERİLERİ MODELLERE AKTARIYORUZ
         displayTitle: dTitle,
         displaySubtitle: dSubtitle,
@@ -124,13 +126,13 @@ class CategoryDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppDimens.p8),
                 Text(
-                  AppFormatter.money(totalValue),
+                  AppFormatter.money(totalValue), // [FIXED] Converted at UI boundary
                   style: AppTextStyles.heroAmount,
                 ),
                 Text(
-                  "${AppFormatter.pnlValue(totalProfit)} (${AppStrings.labels.totalPnl})",
+                  "${AppFormatter.pnlValue(totalProfit)} (${AppStrings.labels.totalPnl})", // [FIXED]
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: totalProfit.toPnlColor(),
+                    color: totalProfit.toPnlColor(), // [FIXED]
                     fontWeight: FontWeight.w600,
                   ),
                 ),

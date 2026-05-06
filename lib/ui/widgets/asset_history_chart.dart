@@ -12,9 +12,9 @@ import 'package:yastik_alti/ui/utils/app_formatter.dart';
 class ChartTransactionPoint {
   final DateTime date;
   final bool isBuy;
-  final double amount;
-  final double price;
-  final double? realizedProfit;
+  final Decimal amount;
+  final Decimal price;
+  final Decimal? realizedProfit;
 
   ChartTransactionPoint({
     required this.date,
@@ -28,7 +28,7 @@ class ChartTransactionPoint {
 class AssetHistoryChart extends StatelessWidget {
   final List<PricePoint> data;
   final List<ChartTransactionPoint> transactions;
-  final double? avgCost;
+  final Decimal? avgCost;
   final Color color;
   final String selectedRange;
   final Function(PricePoint?) onScrub;
@@ -50,14 +50,22 @@ class AssetHistoryChart extends StatelessWidget {
         child: Text(AppStrings.messages.emptyData, style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.bgMedium))),
       );
     }
+
     final rawSortedData = List<PricePoint>.from(data)..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final smoothData = ChartDataSmoother.processAndSmooth(rawSortedData, period: 3);
 
-    if (smoothData.isEmpty) {
+    // [FIXED] Architectural Guard Clause: A line chart mathematically requires at least 2 points.
+    // If the API returns 1 or 0 points, we gracefully abort the render to prevent FlChart 
+    // from crashing on a zero-interval axis, avoiding the "silent failure" trap.
+    if (smoothData.length < 2) {
       return Center(
-        child: Text(AppStrings.messages.emptyData, style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.bgMedium))),
+        child: Text(
+            AppStrings.messages.noDataForRange,
+            style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.textMuted))
+        ),
       );
     }
+
     double minPrice = smoothData.first.price;
     double maxPrice = smoothData.first.price;
     for (var p in smoothData) {
@@ -71,6 +79,16 @@ class AssetHistoryChart extends StatelessWidget {
 
     final startTime = smoothData.first.date.millisecondsSinceEpoch.toDouble();
     final endTime = smoothData.last.date.millisecondsSinceEpoch.toDouble();
+
+    // Secondary safety check just in case the API returns 2 points with the exact same timestamp
+    if (startTime == endTime) {
+      return Center(
+        child: Text(
+            AppStrings.messages.noDataForRange,
+            style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.textMuted))
+        ),
+      );
+    }
 
     final visibleTxs = transactions.where((t) {
       final ms = t.date.millisecondsSinceEpoch.toDouble();
@@ -122,19 +140,22 @@ class AssetHistoryChart extends StatelessWidget {
               interval: priceRange / 4,
               getTitlesWidget: (value, meta) {
                 if (value <= minY || value >= maxY) return const SizedBox();
-                // [DÜZELTİLDİ]: 2 parametre gönderildi
-                return Text(AppFormatter.amount(value, ""), style: const TextStyle(color: Colors.white54, fontSize: 10));
+                return Text(
+                    AppFormatter.amountFromDouble(value),
+                    style: const TextStyle(color: Colors.white54, fontSize: 10)
+                );
               },
             ),
           ),
         ),
+
         borderData: FlBorderData(show: false),
 
         extraLinesData: ExtraLinesData(
           horizontalLines: [
-            if (avgCost != null && avgCost! >= minY && avgCost! <= maxY)
+            if (avgCost != null && avgCost!.toDouble() >= minY && avgCost!.toDouble() <= maxY)
               HorizontalLine(
-                y: avgCost!,
+                y: avgCost!.toDouble(),
                 color: Colors.white.withValues(alpha: AppAlphas.textMuted),
                 strokeWidth: 1.5,
                 dashArray: [5, 5],
@@ -143,7 +164,6 @@ class AssetHistoryChart extends StatelessWidget {
                   alignment: Alignment.topRight,
                   padding: const EdgeInsets.only(right: AppDimens.p4, bottom: AppDimens.p4),
                   style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
-                  // [DÜZELTİLDİ]: 2 parametre gönderildi
                   labelResolver: (_) => '${AppStrings.labels.avgShort}: ${AppFormatter.amount(avgCost!, "")}',
                 ),
               ),
@@ -192,7 +212,7 @@ class AssetHistoryChart extends StatelessWidget {
           ),
           if (visibleTxs.isNotEmpty)
             LineChartBarData(
-              spots: visibleTxs.map((t) => FlSpot(t.date.millisecondsSinceEpoch.toDouble(), t.price)).toList(),
+              spots: visibleTxs.map((t) => FlSpot(t.date.millisecondsSinceEpoch.toDouble(), t.price.toDouble())).toList(),
               isCurved: false,
               color: Colors.transparent,
               barWidth: 0,
@@ -237,15 +257,11 @@ class AssetHistoryChart extends StatelessWidget {
 
                   String profitStr = '';
                   if (!tx.isBuy && tx.realizedProfit != null) {
-                    final isProfit = tx.realizedProfit! >= 0;
-                    final prefix = isProfit ? '+' : '';
-                    // [DÜZELTİLDİ]: 2 parametre gönderildi
-                    profitStr = '\nK/Z: $prefix₺${AppFormatter.amount(tx.realizedProfit!.abs(), "")}';
+                    profitStr = '\nK/Z: ${AppFormatter.pnlValue(tx.realizedProfit!)}';
                   }
 
-                  // [DÜZELTİLDİ]: 2 parametre gönderildi
                   return LineTooltipItem(
-                    '$type\n₺${AppFormatter.amount(tx.price, "")}\n${AppFormatter.amount(tx.amount, "")} ${AppStrings.labels.units}$profitStr',
+                    '$type\n${AppFormatter.money(tx.price)}\n${AppFormatter.amount(tx.amount, "")} ${AppStrings.labels.units}$profitStr',
                     TextStyle(
                       color: tx.isBuy ? Colors.greenAccent : Colors.redAccent,
                       fontWeight: FontWeight.bold,
@@ -256,8 +272,7 @@ class AssetHistoryChart extends StatelessWidget {
 
                 final date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
                 return LineTooltipItem(
-                  // [DÜZELTİLDİ]: 2 parametre gönderildi
-                  '₺${AppFormatter.amount(touchedSpot.y, "")}\n',
+                  '${AppFormatter.moneyFromDouble(touchedSpot.y)}\n',
                   TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
                   children: [
                     TextSpan(

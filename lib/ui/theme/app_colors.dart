@@ -94,12 +94,3 @@ class AppColors {
     return Colors.primaries[index];
   }
 }
-
-extension PnlColorExtension on double {
-  /// Bir oranın/paranın pozitif veya negatif olmasına göre renk döner.
-  Color toPnlColor() {
-    if (abs() < 0.01) return AppColors.neutral;
-    if (this > 0) return AppColors.profit;
-    return AppColors.loss;
-  }
-}

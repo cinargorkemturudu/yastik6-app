@@ -203,8 +203,8 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                             final chartTxs = assetTxs.map((tx) => ChartTransactionPoint(
                               date: tx.purchaseDate,
                               isBuy: tx.type == TransactionType.buy,
-                              amount: tx.amount.toDouble(),
-                              price: tx.purchasePrice.toDouble(),
+                              amount: tx.amount,
+                              price: tx.purchasePrice,
                             )).toList();
 
                             return AssetHistoryChart(

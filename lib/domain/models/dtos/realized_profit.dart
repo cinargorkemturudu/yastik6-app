@@ -104,8 +104,8 @@ class RealizedAssetSummary implements ReportItemBase {
   @override
   double get itemPnlPct {
     final cost = itemCostBasis;
-    // Division done in double space since this is purely a UI percentage
-    return cost == Decimal.zero ? 0.0 : totalProfit.toDouble() / cost.toDouble();
+    // [FIXED] Division done securely in Rational space before casting to double
+    return cost == Decimal.zero ? 0.0 : (totalProfit.toRational() / cost.toRational()).toDouble();
   }
 
   const RealizedAssetSummary({
@@ -184,7 +184,8 @@ class PortfolioRealizedSummary implements PortfolioReportBase {
   @override
   double get totalPnlPct {
     final totalCost = assetSummaries.fold(Decimal.zero, (sum, s) => sum + s.itemCostBasis);
-    return totalCost == Decimal.zero ? 0.0 : totalLifetimeProfit.toDouble() / totalCost.toDouble();
+    // [FIXED] Division done securely in Rational space before casting to double
+    return totalCost == Decimal.zero ? 0.0 : (totalLifetimeProfit.toRational() / totalCost.toRational()).toDouble();
   }
 
   @override

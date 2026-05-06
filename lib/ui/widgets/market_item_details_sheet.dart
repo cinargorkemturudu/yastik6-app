@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_point.dart';
@@ -39,29 +40,33 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
         .toList();
 
     final List<ChartTransactionPoint> realTransactions = [];
-    double? realAvgCost;
+    Decimal? realAvgCost;
 
     if (assetTxs.isNotEmpty) {
-      double totalBuyAmount = 0;
-      double totalBuyCost = 0;
+      Decimal totalBuyAmount = Decimal.zero;
+      Decimal totalBuyCost = Decimal.zero;
 
       for (var tx in assetTxs) {
-        double txAmount = tx.amount.toDouble();
-        double txPrice = tx.purchasePrice.toDouble();
+        Decimal txAmount = tx.amount;
+        Decimal txPrice = tx.purchasePrice;
 
-        double currentAvg = totalBuyAmount > 0 ? (totalBuyCost / totalBuyAmount) : 0;
-        double? profit;
+        // Safe Decimal division for average cost calculation[cite: 1]
+        Decimal currentAvg = totalBuyAmount > Decimal.zero
+            ? (totalBuyCost.toRational() / totalBuyAmount.toRational()).toDecimal(scaleOnInfinitePrecision: 10)
+            : Decimal.zero;
 
-        if (tx.type == TransactionType.sell && currentAvg > 0) {
+        Decimal? profit;
+
+        if (tx.type == TransactionType.sell && currentAvg > Decimal.zero) {
           profit = (txPrice - currentAvg) * txAmount;
         }
 
         realTransactions.add(ChartTransactionPoint(
           date: tx.purchaseDate,
           isBuy: tx.type == TransactionType.buy,
-          amount: txAmount,
-          price: txPrice,
-          realizedProfit: profit,
+          amount: txAmount, // [FIXED]: Passed Decimal directly as per updated ChartTransactionPoint[cite: 1]
+          price: txPrice,  // [FIXED]: Passed Decimal directly
+          realizedProfit: profit, // [FIXED]: Removed the '?' suffix[cite: 1]
         ));
 
         if (tx.type == TransactionType.buy) {
@@ -70,22 +75,24 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
         }
       }
 
-      if (totalBuyAmount > 0) realAvgCost = totalBuyCost / totalBuyAmount;
+      if (totalBuyAmount > Decimal.zero) {
+        realAvgCost = (totalBuyCost.toRational() / totalBuyAmount.toRational()).toDecimal(scaleOnInfinitePrecision: 10);
+      }
     }
 
-    final displayPrice = (_hoveredPoint?.price ?? widget.model.ask).toDouble();
+    final displayPriceDecimal = _hoveredPoint?.price ?? widget.model.ask;
     final isHovering = _hoveredPoint != null;
 
     String pnlString = "-";
     Color pnlColor = Colors.white54;
 
     if (realAvgCost != null) {
-      final pnl = displayPrice - realAvgCost;
-      final pnlRatio = pnl / realAvgCost;
-      final prefix = pnl >= 0 ? '+' : '';
+      final pnl = displayPriceDecimal - realAvgCost;
+      final double pnlRatio = (pnl.toRational() / realAvgCost.toRational()).toDouble();
 
-      pnlString = "$prefix₺${AppFormatter.amount(pnl.abs(), "")} (${AppFormatter.signedPercent(pnlRatio)})";
-      pnlColor = pnl.toPnlColor();
+      // Delegated to AppFormatter for high-precision string representation[cite: 1]
+      pnlString = "${AppFormatter.pnlValue(pnl)} (${AppFormatter.signedPercent(pnlRatio)})";
+      pnlColor = pnl.toPnlColor(); // [FIXED]: Using the new Decimal extension logic[cite: 1]
     }
 
     return Dialog(
@@ -106,8 +113,6 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // PRESENTATION LOGIC DELEGATED: 
-                        // The widget directly consumes the pre-formatted titles from the UI Model.
                         Text(widget.model.displayTitle, style: AppTextStyles.h2, maxLines: 1, overflow: TextOverflow.ellipsis),
                         if (widget.model.displaySubtitle != null)
                           Text(widget.model.displaySubtitle!, style: AppTextStyles.caption.copyWith(color: assetColor)),
@@ -133,12 +138,12 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
                   children: [
                     _StatWidget(
                         title: isHovering ? AppStrings.labels.selectedPrice : AppStrings.labels.currentPrice,
-                        value: '₺${AppFormatter.amount(displayPrice, "")}',
+                        value: AppFormatter.money(displayPriceDecimal),
                         color: isHovering ? assetColor : AppColors.textPrimary
                     ),
                     _StatWidget(
                         title: AppStrings.labels.avgCost,
-                        value: realAvgCost != null ? '₺${AppFormatter.amount(realAvgCost, "")}' : '-',
+                        value: realAvgCost != null ? AppFormatter.money(realAvgCost) : '-',
                         color: AppColors.textSecondary
                     ),
                     _StatWidget(
@@ -180,7 +185,7 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
                     return AssetHistoryChart(
                       data: data,
                       transactions: realTransactions,
-                      avgCost: realAvgCost,
+                      avgCost: realAvgCost, // [FIXED]: Removed the '?' suffix[cite: 1]
                       color: assetColor,
                       selectedRange: _selectedRange,
                       onScrub: (point) {

@@ -5,6 +5,7 @@ import 'package:yastik_alti/domain/models/entities/asset.dart';
 class PortfolioDonutItem {
   final AssetType type;
   final String title;
+  final Decimal quantity;
   final Decimal tlValue; // Upgraded to Decimal
   final Decimal pnlTl;   // Upgraded to Decimal
   final double pnlPct;   // Percentage can stay double for UI display
@@ -13,6 +14,7 @@ class PortfolioDonutItem {
   const PortfolioDonutItem({
     required this.type,
     required this.title,
+    required this.quantity,
     required this.tlValue,
     required this.pnlTl,
     required this.pnlPct,

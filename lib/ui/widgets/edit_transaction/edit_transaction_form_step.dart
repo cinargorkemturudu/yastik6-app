@@ -1,5 +1,3 @@
-// lib/ui/widgets/edit_transaction/edit_transaction_form_step.dart
-
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,8 +8,12 @@ import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
 import 'package:yastik_alti/ui/widgets/inputs/app_amount_input_field.dart';
+import 'package:yastik_alti/ui/states/portfolio_provider.dart';
+import 'package:collection/collection.dart';
+import '../../../domain/models/entities/asset.dart';
 
 class EditTransactionFormStep extends ConsumerStatefulWidget {
   const EditTransactionFormStep({super.key});
@@ -28,9 +30,22 @@ class _EditTransactionFormStepState extends ConsumerState<EditTransactionFormSte
   @override
   void initState() {
     super.initState();
+
     final state = ref.read(editTransactionControllerProvider);
-    _amountCtrl = TextEditingController(text: state.amount > Decimal.zero ? state.amount.toString() : '');
-    _priceCtrl = TextEditingController(text: state.price > Decimal.zero ? state.price.toString() : '');
+    final portfolio = ref.read(portfolioProvider);
+
+    // [HASSASİYET]: Varlık tipini bulup hassasiyeti belirliyoruz (Kripto ise 4 hane)
+    final assetType = portfolio.snapshot.positions
+        .firstWhereOrNull((p) => p.asset.id == state.originalTx?.assetId)
+        ?.asset.type ?? AssetType.metal;
+    final precision = assetType == AssetType.crypto ? 4 : 2;
+
+    _amountCtrl = TextEditingController(
+        text: state.amount > Decimal.zero ? AppFormatter.amount(state.amount, "", precision: precision) : ''
+    );
+    _priceCtrl = TextEditingController(
+        text: state.price > Decimal.zero ? AppFormatter.amount(state.price, "", precision: precision) : ''
+    );
     _noteCtrl = TextEditingController(text: state.note ?? '');
   }
 
@@ -46,8 +61,22 @@ class _EditTransactionFormStepState extends ConsumerState<EditTransactionFormSte
   Widget build(BuildContext context) {
     final state = ref.watch(editTransactionControllerProvider);
     final controller = ref.read(editTransactionControllerProvider.notifier);
+    final portfolio = ref.watch(portfolioProvider);
 
-    // Display a loader while the transaction fetch completes.
+    final assetType = portfolio.snapshot.positions
+        .firstWhereOrNull((p) => p.asset.id == state.originalTx?.assetId)
+        ?.asset.type ?? AssetType.metal;
+    final precision = assetType == AssetType.crypto ? 4 : 2;
+
+    // [KRİTİK DÜZELTME]: Tarih değiştiğinde Controller'dan gelen yeni fiyatı TextField'a basar
+    ref.listen(editTransactionControllerProvider, (prev, next) {
+      if (prev?.price != next.price && !next.isAllocated) {
+        _priceCtrl.text = next.price > Decimal.zero
+            ? AppFormatter.amount(next.price, "", precision: precision)
+            : '';
+      }
+    });
+
     if (state.isLoading || state.originalTx == null) {
       return const Padding(
         padding: EdgeInsets.all(AppDimens.p24),
@@ -58,10 +87,16 @@ class _EditTransactionFormStepState extends ConsumerState<EditTransactionFormSte
     final isBuy = state.originalTx!.type == TransactionType.buy;
     final isFormValid = state.amount > Decimal.zero && state.price > Decimal.zero;
 
+    // FIFO Zaman Bariyeri Hesabı
+    final barrierDates = portfolio.transactions
+        .where((t) => t.assetId == state.originalTx!.assetId && t.id != state.originalTx!.id)
+        .where((t) => t.type == TransactionType.sell || t.purchaseDate.isBefore(state.originalTx!.purchaseDate))
+        .map((t) => t.purchaseDate).toList();
+    DateTime firstDate = barrierDates.isEmpty ? DateTime(2000) : barrierDates.reduce((a, b) => a.isAfter(b) ? a : b);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Allocation Warning Overlay
         if (state.isAllocated) ...[
           Container(
             padding: const EdgeInsets.all(AppDimens.p12),
@@ -85,7 +120,6 @@ class _EditTransactionFormStepState extends ConsumerState<EditTransactionFormSte
           ),
           const SizedBox(height: AppDimens.p16),
         ],
-
         Row(
           children: [
             Expanded(
@@ -109,17 +143,14 @@ class _EditTransactionFormStepState extends ConsumerState<EditTransactionFormSte
             ),
           ],
         ),
-
         const SizedBox(height: AppDimens.p12),
-
-        // Date Selection
         AppOutlinedCard(
           onTap: state.isAllocated ? null : () async {
             FocusScope.of(context).unfocus();
             final picked = await showDatePicker(
               context: context,
-              initialDate: state.date,
-              firstDate: DateTime(2000),
+              initialDate: state.date.isBefore(firstDate) ? firstDate : state.date,
+              firstDate: firstDate,
               lastDate: DateTime.now(),
             );
             if (picked != null) controller.updateDate(picked);
@@ -146,8 +177,6 @@ class _EditTransactionFormStepState extends ConsumerState<EditTransactionFormSte
           ),
         ),
         const SizedBox(height: AppDimens.p12),
-
-        // Note Input Field
         AppOutlinedCard(
           padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16, vertical: AppDimens.p4),
           child: TextField(
@@ -163,8 +192,6 @@ class _EditTransactionFormStepState extends ConsumerState<EditTransactionFormSte
           ),
         ),
         const SizedBox(height: AppDimens.p24),
-
-        // Submission Button
         ElevatedButton(
           onPressed: isFormValid && !state.isLoading
               ? () async {

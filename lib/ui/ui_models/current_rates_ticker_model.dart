@@ -39,8 +39,8 @@ class TickerItemUiModel {
     return cleanedCode.toUpperCase();
   }
 
-  String get formattedBid => AppFormatter.amount(bid.toDouble(), assetCode);
-  String get formattedAsk => AppFormatter.amount(ask.toDouble(), assetCode);
+  String get formattedBid => AppFormatter.amount(bid, assetCode);
+  String get formattedAsk => AppFormatter.amount(ask, assetCode);
   String get formattedBidAsk => 'Al $formattedBid / Sat $formattedAsk';
 
   String get formattedChangePercent {
