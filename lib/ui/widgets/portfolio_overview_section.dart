@@ -22,6 +22,7 @@ import 'package:yastik_alti/ui/screens/history_screen.dart';
 
 class PortfolioOverviewSection extends ConsumerWidget {
   final String title;
+  // [DÜZELTİLDİ]: String? categoryFilter yerine AssetType? (Enum) kullanıyoruz.
   final AssetType? filterType;
   final Function(TransactionType) onTransaction;
   final VoidCallback onLegendTap;
@@ -29,7 +30,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
   const PortfolioOverviewSection({
     super.key,
     required this.title,
-    required this.filterType,
+    required this.filterType, // [GÜNCELLENDİ]
     required this.onTransaction,
     required this.onLegendTap,
   });
@@ -55,6 +56,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
       final summary = portfolioData.realizedSummary;
 
       if (summary != null) {
+        // [GÜVENLİ İLETİM]: filterType zaten Enum olduğu için UniversalPortfolioMapper hatasız çalışır.
         currentDonut = UniversalPortfolioMapper.toRealizedDonutModel(summary, filterType, assetNames);
         allLots = UniversalPortfolioMapper.toRealizedLotUiModels(summary: summary, assetNames: assetNames, assetFilter: filterType);
       } else {
@@ -63,7 +65,6 @@ class PortfolioOverviewSection extends ConsumerWidget {
             totalPnlTl: Decimal.zero,
             totalPnlPct: 0,
             totalValueText: AppFormatter.money(Decimal.zero),
-            // [FIXED] Added the missing required parameter here
             totalPnlText: "${AppFormatter.pnlValue(Decimal.zero)} (${AppFormatter.signedPercent(0)})",
             pnlColor: AppColors.textPrimary,
             items: []
@@ -71,6 +72,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
         allLots = [];
       }
     } else {
+      // [GÜVENLİ İLETİM]: filterType Enum olarak Mapper'a gönderiliyor.
       currentDonut = UniversalPortfolioMapper.toDonutModel(portfolioData.snapshot, filterType, assetNames);
       allLots = UniversalPortfolioMapper.toLotUiModels(positions: portfolioData.snapshot.positions, allocationsMap: portfolioData.allocationsMap, assetNames: assetNames, assetFilter: filterType);
     }
@@ -172,7 +174,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
                     );
                   },
                   onDelete: (id) => _showDeleteConfirmDialog(context, vmNotifier, id),
-                  onEdit: (id) => EditTransactionSheet.show(context, ref, transactionId: id), // [FIXED]: Artık sayfayı açıyor
+                  onEdit: (id) => EditTransactionSheet.show(context, ref, transactionId: id),
                 ),
               const SizedBox(height: AppDimens.p40),
             ],

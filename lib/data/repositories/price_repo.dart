@@ -1,8 +1,10 @@
+import 'package:decimal/decimal.dart';
 import 'package:yastik_alti/data/remote/remote_market_data.dart';
 import 'package:yastik_alti/domain/irepositories/price_irepository.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_point.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_quote.dart';
 import 'package:yastik_alti/core/app_log.dart';
+import '../../domain/models/entities/asset.dart';
 import '../local/market_cache_local.data.dart';
 
 // 1. RAM Önbelleği için küçük bir kapsül (Sadece bu dosyada yaşar)
@@ -28,8 +30,25 @@ class PriceRepo implements PriceIRepository {
   Future<List<PriceQuote>> getLatestAll() async {
     try {
       final freshData = await _remote.fetchLatestAll();
+
+      // 1. TRY (Türk Lirası) varlığını statik olarak oluştur
+      final tryQuote = PriceQuote(
+        assetCode: 'TRY',
+        name: 'Türk Lirası',
+        type: AssetType.currency,
+        bid: Decimal.one,
+        ask: Decimal.one,
+        changeRate: 0.0,
+        asOf: DateTime.now().toUtc(),
+        expiresAt: DateTime.now().toUtc().add(const Duration(days: 365)),
+        isConvertedtoTry: false,
+      );
+
+      // 2. API'den gelen liste boş olsa da olmasa da TRY'yi en başa ekle
+      freshData.insert(0, tryQuote);
+
       if (freshData.isNotEmpty) {
-        // Açıksa arka planda önbelleği güncelle
+        // 3. Açıksa arka planda önbelleği güncelle (TRY artık diske de yazılıyor)
         await _cache.saveCache(freshData);
       }
       return freshData;

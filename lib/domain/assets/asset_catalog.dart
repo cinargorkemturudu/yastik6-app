@@ -5,7 +5,8 @@ class AssetCatalog {
   static bool isPricedInUsd(String code) {
     final upper = code.toUpperCase();
 
-    if (upper == 'USD' || upper == 'USDTRY=X' || upper == 'EUR' || upper == 'GBP') {
+    if (upper == 'USD' || upper == 'USDTRY=X' || upper == 'EUR' ||
+        upper == 'GBP') {
       return false;
     }
 
@@ -21,9 +22,23 @@ class AssetCatalog {
     return false;
   }
 
-  static bool isPhysicalEligible(AssetType type, String code) {
+  static bool
+
+  isPhysicalEligible(AssetType type, String code) {
     if (type == AssetType.metal) return true;
-    final physicalCurrencies = ['USD', 'EUR', 'GBP', 'CHF', 'SAR', 'AUD', 'CAD', 'JPY'];
-    return physicalCurrencies.any((currency) => code.toUpperCase().contains(currency));
+    // [GÜNCELLENDİ]: 'TRY' listeye eklendi
+    final physicalCurrencies = [
+      'USD',
+      'EUR',
+      'GBP',
+      'CHF',
+      'SAR',
+      'AUD',
+      'CAD',
+      'JPY',
+      'TRY'
+    ];
+    return physicalCurrencies.any((currency) =>
+        code.toUpperCase().contains(currency));
   }
 }

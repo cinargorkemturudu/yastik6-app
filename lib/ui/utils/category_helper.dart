@@ -16,6 +16,16 @@ class CategoryHelper {
     ...coreCategories,
     AppStrings.categories.indicator,
   ];
+  
+  static AssetType? toAssetType(String category) {
+    if (category == AppStrings.categories.metal) return AssetType.metal;
+    if (category == AppStrings.categories.currency) return AssetType.currency;
+    if (category == AppStrings.categories.stock) return AssetType.stock;
+    if (category == AppStrings.categories.crypto) return AssetType.crypto;
+    if (category == AppStrings.categories.indicator) return AssetType.indicator;
+
+    return null;
+  } 
 
   /// UI'dan gelen String kategoriyi, Domain'deki AssetType ile eşleştirir
   static bool matchesCategory(AssetType type, String selectedCategory) {

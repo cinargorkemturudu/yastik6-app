@@ -15,7 +15,16 @@ class _VisualConstants {
   static const String fallbackCountryCode = 'tr';
   static const String fallbackLetter = '?';
 
+  // Kripto Marka Renkleri
   static const Color ethereumBlue = Color(0xFF627EEA);
+  static const Color litecoinSilver = Color(0xFF345D9D);
+  static const Color dogeGold = Color(0xFFC2A633);
+  static const Color solanaPurple = Color(0xFF9945FF);
+  static const Color avaxRed = Color(0xFFE84142);
+  static const Color bnbYellow = Color(0xFFF3BA2F);
+  static const Color xrpDark = Color(0xFF23292F);
+  static const Color tetherGreen = Color(0xFF26A17B);
+  static const Color adaBlue = Color(0xFF0033AD);
 }
 
 class AssetVisualMapper {
@@ -29,7 +38,27 @@ class AssetVisualMapper {
     'CAD': 'ca',
     'AUD': 'au',
     'SAR': 'sa',
+    'TRY': 'tr',
   };
+
+  // --- MERKEZİ İSİMLENDİRME HARİTASI ---
+  static const Map<String, String> _assetNames = {
+    'USD': 'Amerikan Doları',
+    'EUR': 'Euro',
+    'GBP': 'İngiliz Sterlini',
+    'CHF': 'İsviçre Frangı',
+    'CAD': 'Kanada Doları',
+    'TRY': 'Türk Lirası',
+    'AUD': 'Avustralya Doları',
+    'SAR': 'Suudi Arabistan Riyali',
+    'JPY': 'Japon Yeni',
+  };
+
+  /// Varlık kodunu alıp merkezi haritadaki tam ismi döndürür.
+  /// Eğer haritada yoksa, API'den gelen temizlenmiş ismi (fallbackName) kullanır.
+  static String getName(String code, String fallbackName) {
+    return _assetNames[code] ?? fallbackName;
+  }
 
   static Widget getAvatar({
     required String assetCode,
@@ -62,14 +91,23 @@ class AssetVisualMapper {
   static Widget _resolveCryptoAvatar(String code) {
     final cleanCode = code.toUpperCase();
 
-    if (cleanCode.contains('ETH')) {
-      return _buildIconAvatar(MdiIcons.ethereum, _VisualConstants.ethereumBlue);
-    }
-    else if (cleanCode.contains('BTC')) {
-      return _buildIconAvatar(MdiIcons.bitcoin, AppColors.crypto);
-    }
+    // 1. MdiIcons Destekli Majörler (İkon + Renk)
+    // StartsWith kullanarak SOLUSDT gibi paritelerde sondaki USDT'nin eşleşmesini engelliyoruz.
+    if (cleanCode.startsWith('BTC')) return _buildIconAvatar(MdiIcons.bitcoin, AppColors.crypto);
+    if (cleanCode.startsWith('ETH')) return _buildIconAvatar(MdiIcons.ethereum, _VisualConstants.ethereumBlue);
+    if (cleanCode.startsWith('LTC')) return _buildIconAvatar(MdiIcons.litecoin, _VisualConstants.litecoinSilver);
 
-    return _buildIconAvatar(Icons.currency_exchange, AppColors.textPrimary);
+    // 2. Yeni Nesil Yıldızlar (Marka Rengi + Baş Harf)
+    if (cleanCode.startsWith('USDT')) return _buildColoredTextAvatar(code, _VisualConstants.tetherGreen);
+    if (cleanCode.startsWith('BNB')) return _buildColoredTextAvatar(code, _VisualConstants.bnbYellow);
+    if (cleanCode.startsWith('SOL')) return _buildColoredTextAvatar(code, _VisualConstants.solanaPurple);
+    if (cleanCode.startsWith('AVAX')) return _buildColoredTextAvatar(code, _VisualConstants.avaxRed);
+    if (cleanCode.startsWith('XRP')) return _buildColoredTextAvatar(code, _VisualConstants.xrpDark);
+    if (cleanCode.startsWith('ADA')) return _buildColoredTextAvatar(code, _VisualConstants.adaBlue);
+    if (cleanCode.startsWith('DOGE')) return _buildColoredTextAvatar(code, _VisualConstants.dogeGold);
+
+    // 3. Geri Kalan Tüm Altcoin Ordusu (Jenerik Stilize Harf)
+    return _buildTextAvatar(code);
   }
 
   static Color _resolveMetalColor(String code) {
@@ -93,12 +131,12 @@ class AssetVisualMapper {
   static Widget _buildIconAvatar(IconData icon, Color color) {
     return CircleAvatar(
       radius: _VisualConstants.avatarRadius,
-      // [DÜZELTİLDİ]: withOpacity -> withValues
       backgroundColor: color.withValues(alpha: _VisualConstants.bgOpacity),
       child: Icon(icon, color: color, size: _VisualConstants.iconSize),
     );
   }
 
+  // Hisse senetleri ve bilinmeyen altcoinler için standart avatar
   static Widget _buildTextAvatar(String code) {
     final letter = code.isNotEmpty
         ? code[0].toUpperCase()
@@ -110,6 +148,20 @@ class AssetVisualMapper {
       child: Text(
         letter,
         style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  // Yeni nesil kriptolar için marka renkli özel avatar
+  static Widget _buildColoredTextAvatar(String code, Color color) {
+    final letter = code.isNotEmpty ? code[0].toUpperCase() : _VisualConstants.fallbackLetter;
+
+    return CircleAvatar(
+      radius: _VisualConstants.avatarRadius,
+      backgroundColor: color.withValues(alpha: _VisualConstants.bgOpacity),
+      child: Text(
+        letter,
+        style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, color: color),
       ),
     );
   }
