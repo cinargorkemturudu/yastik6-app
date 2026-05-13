@@ -8,12 +8,10 @@ class PriceQuote {
   final AssetType type;
   final Decimal bid;
   final Decimal ask;
-
-  // [FIXED] Removed formattedBid and formattedAsk getters entirely.
-
   final double changeRate; // Kept as double (Ratio)
   final DateTime asOf;
   final DateTime expiresAt;
+  final bool isConvertedtoTry;
 
   PriceQuote({
     required this.assetCode,
@@ -24,6 +22,7 @@ class PriceQuote {
     required this.changeRate,
     required this.asOf,
     required this.expiresAt,
+    this.isConvertedtoTry = false,
   });
 
   Decimal get midPrice => (bid + ask) * Decimal.parse('0.5');
@@ -56,21 +55,5 @@ class PriceQuote {
     }
 
     return diffInHours > 24;
-  }
-
-  PriceQuote toConvertedTry(Decimal usdRate) {
-    final convertedBid = bid * usdRate;
-    final convertedAsk = ask * usdRate;
-
-    return PriceQuote(
-      assetCode: assetCode,
-      name: name,
-      type: type,
-      bid: convertedBid,
-      ask: convertedAsk,
-      changeRate: changeRate,
-      asOf: asOf,
-      expiresAt: expiresAt,
-    );
   }
 }

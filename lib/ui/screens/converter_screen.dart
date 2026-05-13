@@ -14,6 +14,7 @@ import 'package:yastik_alti/ui/widgets/converter/market_mode_toggle.dart';
 import 'package:yastik_alti/ui/widgets/converter/opportunity_cost_card.dart';
 import 'package:yastik_alti/ui/widgets/inputs/app_amount_input_field.dart';
 import 'package:yastik_alti/ui/widgets/universal_asset_picker_sheet.dart';
+import '../states/live_price_provider.dart';
 import '../utils/app_safe_text.dart';
 
 class ConverterScreen extends ConsumerStatefulWidget {
@@ -36,7 +37,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
     final initialAmount = state.amount;
     final initialResult = ref.read(converterResultProvider);
 
-    // [FIXED] Determine precision based on asset type to avoid rounding on load[cite: 2, 3]
+    // Determine precision based on asset type to avoid rounding on load
     final sellPrecision = state.fromAsset?.type == AssetType.crypto ? 4 : 2;
     final buyPrecision = state.toAsset?.type == AssetType.crypto ? 4 : 2;
 
@@ -83,7 +84,9 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
         final currentTextValue = AppFormatter.parseInput(_sellAmountCtrl.text);
 
         if (currentTextValue != next.amount && !_sellFocusNode.hasFocus) {
-          final sellPrecision = next.fromAsset?.type == AssetType.crypto ? 4 : 2;
+          final sellPrecision = next.fromAsset?.type == AssetType.crypto
+              ? 4
+              : 2;
           final newString = next.amount > Decimal.zero
               ? AppFormatter.amount(next.amount, "", precision: sellPrecision)
               : '';
@@ -106,7 +109,8 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
           centerTitle: true,
         ),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16, vertical: AppDimens.p8),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppDimens.p16, vertical: AppDimens.p8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -124,14 +128,16 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                 isInput: true,
                 controller: _sellAmountCtrl,
                 focusNode: _sellFocusNode,
-                onAmountChanged: (val) => viewModel.updateAmount(AppFormatter.parseInput(val)),
+                onAmountChanged: (val) =>
+                    viewModel.updateAmount(AppFormatter.parseInput(val)),
                 onAssetSelected: viewModel.updateFromAsset,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppDimens.p8),
                 child: Center(
                   child: IconButton(
-                    icon: const Icon(Icons.swap_vert, color: AppColors.brandBlue, size: 32),
+                    icon: const Icon(
+                        Icons.swap_vert, color: AppColors.brandBlue, size: 32),
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       viewModel.swapAssets();
@@ -178,18 +184,34 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
     String? displaySubtitle;
 
     if (quote != null) {
+      // 1. Sanitize values using the central formatter
+      final String cleanCode = AppFormatter.cleanAssetCode(quote.assetCode);
+      final String cleanName = AppFormatter.cleanAssetName(quote.name);
+
+      // 2. Resolve the professional display name from our mapping table
+      // This is the missing piece that ensures "Amerikan Doları" is found
+      final String displayName = AssetVisualMapper.getName(cleanCode, cleanName);
+
+      // --- PRESENTATION LOGIC ---
       switch (quote.type) {
+        case AssetType.currency:
         case AssetType.stock:
-          displayTitle = quote.assetCode;
-          displaySubtitle = quote.name;
+        // [FIXED]: Currencies and Stocks share the same visual hierarchy
+        // Full Name as Title (e.g., "Amerikan Doları" / "Apple Inc"), Code as Subtitle (e.g., "USD" / "AAPL")
+          displayTitle = displayName;
+          displaySubtitle = cleanCode;
           break;
+
         case AssetType.metal:
-          displayTitle = quote.name;
+        // Metals: Full Name as Title, no subtitle
+          displayTitle = displayName;
           displaySubtitle = null;
           break;
+
         default:
-          displayTitle = AppFormatter.cleanAssetCode(quote.assetCode);
-          displaySubtitle = quote.name.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
+        // Crypto and others: Ticker Code as Title (e.g., "BTC"), Full Name as Subtitle
+          displayTitle = cleanCode;
+          displaySubtitle = displayName;
           break;
       }
     }
@@ -208,7 +230,8 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
       prefixWidget: GestureDetector(
         onTap: () => _showAssetPicker(context, ref, onAssetSelected),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppDimens.p12, vertical: AppDimens.p8),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppDimens.p12, vertical: AppDimens.p8),
           decoration: BoxDecoration(
             color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(AppDimens.radiusMd),
@@ -219,16 +242,19 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
               if (quote != null) ...[
                 SizedBox(
                   width: 20, height: 20,
-                  child: AssetVisualMapper.getAvatar(assetCode: quote.assetCode, type: quote.type),
+                  child: AssetVisualMapper.getAvatar(
+                      assetCode: quote.assetCode, type: quote.type),
                 ),
                 const SizedBox(width: AppDimens.p8),
               ],
               AppSafeText(
                 displayTitle,
-                style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                style: AppTextStyles.bodyLarge.copyWith(
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(width: AppDimens.p4),
-              const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textMuted),
+              const Icon(Icons.keyboard_arrow_down, size: 16,
+                  color: AppColors.textMuted),
             ],
           ),
         ),
@@ -244,7 +270,9 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
             maxLines: 2,
           ),
           const SizedBox(width: AppDimens.p12),
-          Text("${AppStrings.labels.buy}: ${AppFormatter.amount(quote.bid, "", precision: quote.type == AssetType.crypto ? 4 : 2)} TL", style: AppTextStyles.caption),
+          Text("${AppStrings.labels.buy}: ${AppFormatter.amount(quote.bid, "",
+              precision: quote.type == AssetType.crypto ? 4 : 2)} TL",
+              style: AppTextStyles.caption),
         ],
       )
           : null,
@@ -252,11 +280,17 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
   }
 
   void _showAssetPicker(BuildContext context, WidgetRef ref, Function(PriceQuote) onSelected) {
+    final marketState = ref.read(livePriceProvider).valueOrNull;
+    final marketAssets = marketState?.marketAssets ?? [];
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => UniversalAssetPickerSheet(onSelected: onSelected),
+      builder: (ctx) => UniversalAssetPickerSheet(
+        onSelected: onSelected,
+        customAssetList: marketAssets, // Repo'dan gelen taze ve merkezi listeyi kullan
+      ),
     );
   }
 }

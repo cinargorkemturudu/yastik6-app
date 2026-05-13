@@ -143,21 +143,22 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
+  // YENİ HALİ (Tertemiz ve Kurumsal):
   Widget _buildFilterBar() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16, vertical: AppDimens.p12),
       child: Row(
         children: [
-          _buildChoiceChip("Tümü", null),
+          _buildChoiceChip(AppStrings.categories.all, null), // "Tümü" yerine AppStrings
           const SizedBox(width: AppDimens.p8),
           _buildChoiceChip(AppStrings.categories.metal, AssetType.metal),
           const SizedBox(width: AppDimens.p8),
           _buildChoiceChip(AppStrings.categories.currency, AssetType.currency),
           const SizedBox(width: AppDimens.p8),
-          _buildChoiceChip("Hisse", AssetType.stock),
+          _buildChoiceChip(AppStrings.categories.stock, AssetType.stock), // [DÜZELTİLDİ]
           const SizedBox(width: AppDimens.p8),
-          _buildChoiceChip("Kripto", AssetType.crypto),
+          _buildChoiceChip(AppStrings.categories.crypto, AssetType.crypto), // [DÜZELTİLDİ]
         ],
       ),
     );

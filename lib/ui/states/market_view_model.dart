@@ -91,6 +91,7 @@ class MarketViewModel extends Notifier<MarketScreenState> {
     final query = state.searchQuery.trim().toLowerCase();
 
     final filteredQuotes = _rawQuotes.where((quote) {
+      if (quote.assetCode == 'TRY') return false;
       if (query.isEmpty) return true;
       return quote.name.toLowerCase().contains(query) ||
           quote.assetCode.toLowerCase().contains(query);

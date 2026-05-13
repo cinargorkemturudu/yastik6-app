@@ -1,4 +1,4 @@
-import 'package:decimal/decimal.dart'; // [FIXED] Added missing import for Decimal
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/domain/models/entities/asset.dart';
@@ -14,12 +14,13 @@ import '../ui_models/owned_asset_list_item_model.dart';
 import '../widgets/cards/asset_accordion_item.dart';
 
 class CategoryDetailScreen extends ConsumerWidget {
+  // [DÜZELTİLDİ]: String categoryFilter yerine Tip Güvenli (Type-Safe) Enum kullanıyoruz.
   final AssetType? categoryType;
   final String categoryName;
 
   const CategoryDetailScreen({
     super.key,
-    required this.categoryType,
+    required this.categoryType, // [GÜNCELLENDİ]
     required this.categoryName,
   });
 
@@ -44,14 +45,13 @@ class CategoryDetailScreen extends ConsumerWidget {
 
     final positions = snapshot.positions.where((p) {
       if (categoryType == null) return true;
+      // [DÜZELTİLDİ]: Artık Enum ile Enum'ı karşılaştırıyoruz. String eşleştirmesi tarihe karıştı!
       return p.assetType == categoryType;
     }).toList();
 
-    // [FIXED]: Accumulate securely in Decimal space to prevent floating-point loss
     final Decimal totalValue = positions.fold(Decimal.zero, (sum, p) => sum + p.currentValue);
     final Decimal totalProfit = positions.fold(Decimal.zero, (sum, p) => sum + p.profit);
 
-    // [DÜZELTİLDİ]: Sunum mantığı modele aktarılırken uygulandı
     final items = positions.map((p) {
       final rawName = assetNames[p.asset.symbol] ?? p.asset.name;
 
@@ -65,11 +65,10 @@ class CategoryDetailScreen extends ConsumerWidget {
           break;
         case AssetType.metal:
           dTitle = rawName;
-          dSubtitle = null; // Harem API'den gelen boşluğu/placeholder'ı sildik
+          dSubtitle = null;
           break;
-        default: // Kripto ve Döviz
+        default:
           dTitle = AppFormatter.cleanAssetCode(p.asset.symbol);
-          // İsimde geçen yanıltıcı USD ibarelerini temizliyoruz
           dSubtitle = rawName.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
           break;
       }
@@ -85,7 +84,6 @@ class CategoryDetailScreen extends ConsumerWidget {
         pnlColor: p.profit.toPnlColor(),
         avgCostText: AppFormatter.money(p.averageBuyPrice),
         pnlValueText: AppFormatter.pnlValue(p.profit),
-        // FORMATLANMIŞ VERİLERİ MODELLERE AKTARIYORUZ
         displayTitle: dTitle,
         displaySubtitle: dSubtitle,
       );
@@ -126,13 +124,13 @@ class CategoryDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppDimens.p8),
                 Text(
-                  AppFormatter.money(totalValue), // [FIXED] Converted at UI boundary
+                  AppFormatter.money(totalValue),
                   style: AppTextStyles.heroAmount,
                 ),
                 Text(
-                  "${AppFormatter.pnlValue(totalProfit)} (${AppStrings.labels.totalPnl})", // [FIXED]
+                  "${AppFormatter.pnlValue(totalProfit)} (${AppStrings.labels.totalPnl})",
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: totalProfit.toPnlColor(), // [FIXED]
+                    color: totalProfit.toPnlColor(),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

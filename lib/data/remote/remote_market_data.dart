@@ -162,7 +162,8 @@ class RemoteMarketData {
     final bidVal = Decimal.tryParse(j['bid']?.toString() ?? '0') ?? Decimal.zero;
     final askVal = Decimal.tryParse(j['ask']?.toString() ?? '0') ?? Decimal.zero;
     final changeRateVal = (j['changeRate'] as num?)?.toDouble() ?? 0.0;
-
+    final convertedFlag = j['isConvertedToTry'] == true;
+    
     final type = _mapType(j['type']?.toString());
     if (type == null) {
       throw FormatException('Unknown or unsupported asset type received: ${j['type']}');
@@ -184,6 +185,7 @@ class RemoteMarketData {
       changeRate: changeRateVal,
       asOf: asOf,
       expiresAt: expiresAt,
+      isConvertedtoTry: convertedFlag,
     );
   }
 

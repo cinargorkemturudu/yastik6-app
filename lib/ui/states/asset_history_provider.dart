@@ -49,6 +49,9 @@ class HistoricalPriceParams {
 // [FIXED] Upgraded from double? to Decimal?
 final historicalPriceProvider = FutureProvider.autoDispose.family<Decimal?, HistoricalPriceParams>(
       (ref, params) async {
+        
+        if (params.assetCode == 'TRY') return Decimal.one;
+        
     final repo = ref.watch(priceRepoProvider);
 
     final history = await repo.getHistory(params.assetCode, 'Year');

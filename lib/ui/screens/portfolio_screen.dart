@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:yastik_alti/domain/models/entities/asset.dart';
 import 'package:yastik_alti/domain/models/entities/transaction.dart';
 import 'package:yastik_alti/ui/screens/portfolio_page.dart';
 import 'package:yastik_alti/ui/widgets/add_asset/add_asset_sheet.dart';
-import '../../core/app_log.dart';
+import 'package:yastik_alti/ui/utils/category_helper.dart';
+import 'package:yastik_alti/ui/theme/app_colors.dart';
+import 'package:yastik_alti/ui/theme/app_strings.dart';
+import 'package:yastik_alti/ui/theme/app_text_style.dart';
 
 class PortfolioScreen extends ConsumerStatefulWidget {
   const PortfolioScreen({super.key});
@@ -14,21 +16,6 @@ class PortfolioScreen extends ConsumerStatefulWidget {
 }
 
 class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
-  final PageController _pageController = PageController();
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _onPageChanged(int index) {
-    // Index 0 is our 'All' or 'General' tab. 
-    // Any index greater than 0 corresponds to AssetType.values[index - 1].
-    final tabName = index == 0 ? 'general' : AssetType.values[index - 1].name;
-
-    AppLog.insight('swipe_tab', metadata: {'tab': tabName});
-  }
 
   // --- [UX ŞAHESERİ BURADA DEVREYE GİRİYOR] ---
   void _handleTransaction(TransactionType type) {
@@ -38,26 +25,29 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        children: [
-          // Index 0: The "All Assets" view
-          PortfolioPage(
-            filterType: null,
-            onTransaction: _handleTransaction,
-          ),
-          // Index 1 and beyond: Dynamically generated pages for every AssetType
-          ...AssetType.values
-              .where((type) => type != AssetType.indicator)
-              .map(
-                (type) => PortfolioPage(
-              filterType: type,
+    // [MERKEZİ STANDART]: Market ekranı ile aynı kategorileri çekiyoruz.
+    // En başa 'Tümü' seçeneğini ekleyerek listeyi portföye özel hale getiriyoruz.
+    final categories = CategoryHelper.marketCategories;
+
+    return DefaultTabController(
+      length: categories.length, // Dinamik sekme sayısı
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          title: Text(AppStrings.titles.generalPortfolio, style: AppTextStyles.h2),
+          // [CİLA]: Market ekranındaki şık TabBar tasarımını buraya da uyguladık.
+        ),
+        body: TabBarView(
+          children: categories.map((cat) {
+            final assetType = CategoryHelper.toAssetType(cat);
+            return PortfolioPage(
+              filterType: assetType,
               onTransaction: _handleTransaction,
-            ),
-          ),
-        ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }

@@ -1,12 +1,9 @@
 import 'dart:async';
-import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/core/app_log.dart';
 import 'package:yastik_alti/di/providers.dart';
 import 'package:yastik_alti/domain/models/dtos/market_state.dart';
 import 'package:yastik_alti/domain/models/value_objects/price_quote.dart';
-import '../../domain/assets/asset_catalog.dart';
-import '../../domain/models/entities/asset.dart';
 
 final livePriceProvider = AsyncNotifierProvider<LivePriceNotifier, MarketState>(LivePriceNotifier.new);
 
@@ -45,31 +42,9 @@ class LivePriceNotifier extends AsyncNotifier<MarketState> {
     return _buildMarketState(quotes);
   }
 
-  // Yardımcı metod: USD dönüşümlerini ve state oluşturmayı tek yerden yapar
+  // [BFF DEVRİMİ]: USD araması, hata mesajları ve fiyat çarpanı tamamen silindi!
+  // Backend veriyi doğuştan TL olarak yolladığı için sadece State'e çeviriyoruz.
   MarketState _buildMarketState(List<PriceQuote> quotes) {
-    PriceQuote? usdQuote;
-    try {
-      usdQuote = quotes.firstWhere((q) => q.assetCode == 'USD' || q.assetCode == 'USDTRY=X');
-    } catch (e) {
-      AppLog.error(
-        'USD kuru bulunamadı! Yabancı varlıklar (Kripto, Ons) TL\'ye çevrilemeyecek.',
-        domain: 'STATE',
-      );
-    }
-
-    final Decimal usdRate = usdQuote?.midPrice ?? Decimal.one;
-
-    if (usdRate > Decimal.one) {
-      quotes = quotes.map((q) {
-        if (AssetCatalog.isPricedInUsd(q.assetCode)) {
-          if (q.type != AssetType.indicator) {
-            return q.toConvertedTry(usdRate);
-          }
-        }
-        return q;
-      }).toList();
-    }
-
     return MarketState(
       marketAssets: quotes,
       priceMap: {for (var q in quotes) q.assetCode: q},

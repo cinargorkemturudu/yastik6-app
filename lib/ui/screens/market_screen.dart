@@ -87,11 +87,19 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           ),
         ),
         body: TabBarView(
-          // [DİNAMİK LİSTELEME]: Seçilen kategoriye uyanlar filtrelenip çiziliyor
+          // [DİNAMİK LİSTELEME]: 
           children: categories.map((cat) {
-            final filteredItems = state.allItems
-                .where((item) => CategoryHelper.matchesCategory(item.type, cat))
-                .toList();
+            // Junior Notu: String ile filtreleme yapmak tehlikelidir (typo riski).
+            // Önce String'i (örn: 'Kripto') güvenli bir Enum'a (AssetType.crypto) çeviriyoruz.
+            final assetType = CategoryHelper.toAssetType(cat);
+
+            final filteredItems = state.allItems.where((item) {
+              // Eğer assetType null ise 'Tümü' seçilmiştir, hepsini göster.
+              // Değilse, varlığın tipi bizim Enum'ımızla eşleşiyor mu bak.
+              if (assetType == null) return true;
+              return item.type == assetType;
+            }).toList();
+
             return _buildFilteredList(state.isLoading, state.searchQuery, filteredItems);
           }).toList(),
         ),
@@ -114,7 +122,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     return ListView.builder(
       padding: const EdgeInsets.only(top: AppDimens.p8, bottom: 80),
       itemCount: items.length,
-      itemBuilder: (context, index) {
+      itemBuilder: (context, index) { 
         final item = items[index];
         return MarketItemCard(
           model: item,

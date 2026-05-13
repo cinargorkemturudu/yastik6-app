@@ -53,6 +53,7 @@ class _TitleStrings {
   const _TitleStrings();
 
   final String history = "İşlem Geçmişi";
+  final String portfolio = "Portföy";
   final String generalPortfolio = "Genel Portföy Özeti";
   final String recentTransactions = "Son İşlemler";
   final String profitMode = "Kar Modu";

@@ -11,7 +11,7 @@ import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_asset_list_tile.dart';
 import 'package:yastik_alti/ui/utils/asset_visual_mapper.dart';
 import 'package:yastik_alti/ui/utils/app_formatter.dart';
-import 'package:yastik_alti/ui/utils/category_helper.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/utils/category_helper.dart';
 
 class UniversalAssetPickerSheet extends ConsumerStatefulWidget {
   final Function(PriceQuote) onSelected;
@@ -37,7 +37,6 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = "";
 
-  // [MERKEZİ STANDART]: İlk sekme all olarak seçili
   String _selectedCategory = AppStrings.categories.all;
   final List<String> _categories = CategoryHelper.coreCategories;
 
@@ -55,7 +54,6 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
       final searchMatches = quote.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           quote.assetCode.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      // [MERKEZİ STANDART]: Filtreleme kuralı helper'a soruluyor
       bool categoryMatches = CategoryHelper.matchesCategory(quote.type, _selectedCategory);
 
       return searchMatches && categoryMatches;
@@ -152,21 +150,27 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                     final quote = filteredAssets[index];
                     final isSellingFlow = widget.transactionType == TransactionType.sell;
 
+                    // --- MERKEZİ SUNUM MANTIĞI EKLENDİ ---
+                    final String cleanCode = AppFormatter.cleanAssetCode(quote.assetCode);
+                    final String cleanName = AppFormatter.cleanAssetName(quote.name);
+                    final String displayName = AssetVisualMapper.getName(cleanCode, cleanName);
+
                     String displayTitle;
                     String? displaySubtitle;
 
                     switch (quote.type) {
+                      case AssetType.currency:
                       case AssetType.stock:
-                        displayTitle = quote.name;
-                        displaySubtitle = quote.assetCode;
+                        displayTitle = displayName;
+                        displaySubtitle = cleanCode;
                         break;
                       case AssetType.metal:
-                        displayTitle = quote.name;
+                        displayTitle = displayName;
                         displaySubtitle = null;
                         break;
                       default:
-                        displayTitle = AppFormatter.cleanAssetCode(quote.assetCode);
-                        displaySubtitle = quote.name.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
+                        displayTitle = cleanCode;
+                        displaySubtitle = displayName;
                         break;
                     }
 
