@@ -130,20 +130,22 @@ class _Legend extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                    i.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  // Hem .IS temizliği hem de uzun Harem isimleri için koruma
+                    AppFormatter.cleanAssetCode(i.title),
+                    maxLines: 1, // Uzun isimlerin ikinci satıra geçmesini engeller
+                    overflow: TextOverflow.ellipsis, // Sığmayan kısma "..." koyar
                     style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)
                 ),
                 Text(
                     "${AppFormatter.pnlValue(i.pnlTl)} (${AppFormatter.percent(i.pnlPct)})",
+                    maxLines: 1, // [YENİ]: PnL metninin taşmasını kesin olarak engeller
+                    overflow: TextOverflow.ellipsis, // [YENİ]: Sığmayan kısma "..." koyar
                     style: TextStyle(color: i.pnlTl.toPnlColor(), fontSize: 11)
                 ),
               ],
             ),
           ),
           const SizedBox(width: AppDimens.p6),
-          // [DÜZELTİLDİ]: Fiyat ve Miktar yan yana değil, alt alta sütun olarak yapılandırıldı
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
@@ -152,7 +154,6 @@ class _Legend extends StatelessWidget {
                   "${AppFormatter.amount(i.tlValue, "")} TL",
                   style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)
               ),
-              // [YENİ]: Miktar alanı fiyatın altına taşındı
               Text(
                   "${AppFormatter.amount(i.quantity, "")} adet",
                   style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7), fontSize: 10)
