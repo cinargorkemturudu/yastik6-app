@@ -17,27 +17,23 @@ class PortfolioScreen extends ConsumerStatefulWidget {
 
 class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
-  // --- [UX ŞAHESERİ BURADA DEVREYE GİRİYOR] ---
   void _handleTransaction(TransactionType type) {
-    // Boş ekranı atla, kullanıcının niyetine göre DOĞRUDAN varlık seçiciyi aç!
-    AddAssetSheet.showFlow(context, ref, type: type);
+    // [GÜNCELLENDİ]: isFromDonut bayrağını true olarak gönderiyoruz
+    AddAssetSheet.showFlow(context, ref, type: type, isFromDonut: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    // [MERKEZİ STANDART]: Market ekranı ile aynı kategorileri çekiyoruz.
-    // En başa 'Tümü' seçeneğini ekleyerek listeyi portföye özel hale getiriyoruz.
     final categories = CategoryHelper.marketCategories;
 
     return DefaultTabController(
-      length: categories.length, // Dinamik sekme sayısı
+      length: categories.length,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.background,
           elevation: 0,
           title: Text(AppStrings.titles.generalPortfolio, style: AppTextStyles.h2),
-          // [CİLA]: Market ekranındaki şık TabBar tasarımını buraya da uyguladık.
         ),
         body: TabBarView(
           children: categories.map((cat) {
