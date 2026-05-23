@@ -6,18 +6,21 @@ import 'package:yastik_alti/ui/ui_models/portfolio_donut_model.dart';
 import 'package:yastik_alti/ui/utils/app_formatter.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
+import '../../domain/models/entities/asset.dart';
 import 'app_clickable_wrapper.dart';
 
 class PortfolioDonut extends StatelessWidget {
   final PortfolioDonutModel? data;
-  final Function(TransactionType) onTransaction;
+  final Function(TransactionType, AssetType?) onTransaction;
   final VoidCallback onLegendTap;
+  final AssetType? currentFilter;
 
   const PortfolioDonut({
     super.key,
     required this.data,
     required this.onTransaction,
     required this.onLegendTap,
+    this.currentFilter,
   });
 
   @override
@@ -49,13 +52,13 @@ class PortfolioDonut extends StatelessWidget {
                         _TransactionButton(
                           icon: Icons.remove,
                           color: AppColors.lossAccent,
-                          onTap: () => onTransaction(TransactionType.sell),
+                          onTap: () => onTransaction(TransactionType.sell, currentFilter),
                         ),
                         const SizedBox(width: AppDimens.p12),
                         _TransactionButton(
                           icon: Icons.add,
                           color: AppColors.profitAccent,
-                          onTap: () => onTransaction(TransactionType.buy),
+                          onTap: () => onTransaction(TransactionType.buy, currentFilter),
                         ),
                       ],
                     ),

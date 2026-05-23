@@ -8,6 +8,8 @@ import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 
+import '../../domain/models/entities/asset.dart';
+
 class PortfolioScreen extends ConsumerStatefulWidget {
   const PortfolioScreen({super.key});
 
@@ -17,9 +19,13 @@ class PortfolioScreen extends ConsumerStatefulWidget {
 
 class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
-  void _handleTransaction(TransactionType type) {
-    // [GÜNCELLENDİ]: isFromDonut bayrağını true olarak gönderiyoruz
-    AddAssetSheet.showFlow(context, ref, type: type, isFromDonut: true);
+  void _handleTransaction(TransactionType type, AssetType? assetType) {
+    AddAssetSheet.showFlow(
+        context, ref,
+        type: type,
+        isFromDonut: true,
+        initialAssetType: assetType,
+    );
   }
 
   @override

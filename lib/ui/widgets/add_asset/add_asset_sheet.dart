@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/domain/models/entities/transaction.dart';
-import 'package:yastik_alti/domain/models/value_objects/price_quote.dart'; // [EKLENDİ] Filtreleme için
+import 'package:yastik_alti/domain/models/value_objects/price_quote.dart';
 import 'package:yastik_alti/ui/states/add_asset_controller.dart';
-import 'package:yastik_alti/ui/states/live_price_provider.dart'; // [EKLENDİ] Market verisini okumak için
+import 'package:yastik_alti/ui/states/live_price_provider.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
@@ -16,24 +16,33 @@ import '../../utils/app_formatter.dart';
 import 'asset_form_step.dart';
 
 class AddAssetSheet extends ConsumerWidget {
-  // [EKLENDİ]: Sheet açıkken, içerideki düzenle butonunun da filtreden haberdar olması için
   final bool isFromDonut;
+  final AssetType? initialAssetType;
 
-  const AddAssetSheet({super.key, this.isFromDonut = false});
+  const AddAssetSheet({
+    super.key,
+    this.isFromDonut = false,
+    this.initialAssetType,
+  });
 
-  // [GÜNCELLENDİ]: isFromDonut bayrağı eklendi
-  static void showFlow(BuildContext context, WidgetRef ref, {TransactionType type = TransactionType.buy, bool isFromDonut = false}) {
+  static void showFlow(
+      BuildContext context,
+      WidgetRef ref,
+      {
+        TransactionType type = TransactionType.buy,
+        bool isFromDonut = false,
+        AssetType? initialAssetType,
+      }) {
     final controller = ref.read(addAssetControllerProvider.notifier);
     controller.updateTransactionType(type);
     controller.selectAsset(null);
 
-    // [YENİ MANTIK]: Gösterilecek listeyi belirliyoruz
+    // Listeyi filtrelemiyoruz, orijinal haliyle bırakıyoruz
     List<PriceQuote>? computedAssetList;
 
     if (type == TransactionType.sell) {
       computedAssetList = controller.availableQuotes;
     } else if (type == TransactionType.buy && isFromDonut) {
-      // Donut'tan alım yapılıyorsa, market listesini alıp TL'yi çıkarıyoruz
       final marketState = ref.read(livePriceProvider).valueOrNull;
       if (marketState != null) {
         computedAssetList = marketState.marketAssets.where((q) => q.assetCode != 'TRY').toList();
@@ -48,6 +57,7 @@ class AddAssetSheet extends ConsumerWidget {
         title: type == TransactionType.buy ? AppStrings.converter.buyAsset : AppStrings.converter.sellAsset,
         transactionType: type,
         customAssetList: computedAssetList,
+        initialAssetType: initialAssetType, // [EKLENDİ]: Picker'a ilk açılış sekmesini fısıldıyoruz
         customEmptyMessage: type == TransactionType.sell
             ? AppStrings.messages.emptyPortfolioForSell
             : null,
@@ -60,8 +70,10 @@ class AddAssetSheet extends ConsumerWidget {
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
-                // [GÜNCELLENDİ]: İçeriye durumu paslıyoruz
-                builder: (ctx) => AddAssetSheet(isFromDonut: isFromDonut),
+                builder: (ctx) => AddAssetSheet(
+                  isFromDonut: isFromDonut,
+                  initialAssetType: initialAssetType, // [EKLENDİ]: Seçim yapıldıktan sonra içerideki forma da tüyoyu aktarıyoruz
+                ),
               );
             }
           });
@@ -103,7 +115,6 @@ class AddAssetSheet extends ConsumerWidget {
                   onTap: () {
                     FocusScope.of(context).unfocus();
 
-                    // [YENİ MANTIK]: İçerideki "Varlığı Değiştir" tıklandığında da aynı filtre geçerli olsun
                     List<PriceQuote>? computedAssetList;
                     if (state.transactionType == TransactionType.sell) {
                       computedAssetList = controller.availableQuotes;
@@ -122,6 +133,7 @@ class AddAssetSheet extends ConsumerWidget {
                         title: state.transactionType == TransactionType.buy ? AppStrings.converter.buyAsset : AppStrings.converter.sellAsset,
                         transactionType: state.transactionType,
                         customAssetList: computedAssetList,
+                        initialAssetType: initialAssetType, // [EKLENDİ]: "Varlığı Değiştir" dendiğinde de doğru sekmeden açılsın
                         customEmptyMessage: state.transactionType == TransactionType.sell
                             ? AppStrings.messages.emptyPortfolioForSell
                             : null,
