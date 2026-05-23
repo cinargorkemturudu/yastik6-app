@@ -56,7 +56,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
       selectedColor: AppColors.brandBlue.withValues(alpha: AppAlphas.bgMedium),
       backgroundColor: AppColors.surface,
       showCheckmark: false,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimens.p4, vertical: 0),
       labelStyle: AppTextStyles.captionBold.copyWith(
         color: isSelected ? AppColors.brandBlue : AppColors.textMuted,
       ),
@@ -66,103 +66,135 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
 
   @override
   Widget build(BuildContext context) {
-    // Mantık blokları (isStock, isMetal vs.) buradan tamamen kaldırıldı!
+    final bool isProfit = widget.model.pnlColor != AppColors.lossAccent;
+    final Color dailyColor = widget.model.pnlColor;
+    final IconData dailyIcon = isProfit ? Icons.arrow_upward : Icons.arrow_downward;
+    final String dailyChangeText = widget.model.pnlPercent;
 
     return AppOutlinedCard(
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          // --- HEADER (Summary Data) ---
+          // --- HEADER: 3 SÜTUNLU KONSOLİDE YAPI ---
           AppClickableWrapper(
             onTap: _toggle,
             borderRadius: AppDimens.radiusMd,
             child: Padding(
-              padding: const EdgeInsets.all(AppDimens.p12),
-              child: Row(
+              padding: const EdgeInsets.all(AppDimens.p16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          // DOĞRUDAN MODELDEN OKUNUYOR
-                          "${widget.model.amountText} ${widget.model.displayTitle}",
-                          style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w700, fontSize: 14),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
+                  // Üst Kısım: Sembol/İsim ve Fiyat/Günlük Değişim
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // [DÜZELTİLDİ]: Sol tarafı tamamen Expanded içine aldık
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // DOĞRUDAN MODELDEN OKUNUYOR
-                            if (widget.model.displaySubtitle != null) ...[
-                              Text(widget.model.displaySubtitle!, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 11)),
-                              const SizedBox(width: 4),
-                              Container(width: 3, height: 3, decoration: const BoxDecoration(color: AppColors.textMuted, shape: BoxShape.circle)),
-                              const SizedBox(width: 4),
-                            ],
-                            const Icon(Icons.show_chart, color: AppColors.textMuted, size: 12),
-                            const SizedBox(width: AppDimens.p4),
                             Text(
-                              widget.model.currentPriceText,
-                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, fontSize: 12),
+                              widget.model.displayTitle,
+                              style: AppTextStyles.h2.copyWith(fontSize: 18, letterSpacing: 0.5),
+                              maxLines: 2, // 2 satırdan sonrasını keser
+                              overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: AppDimens.p2),
+                            if (widget.model.displaySubtitle != null)
+                              Text(
+                                widget.model.displaySubtitle!,
+                                style: AppTextStyles.caption.copyWith(fontSize: 12),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        widget.model.totalValueText,
-                        style: AppTextStyles.h3.copyWith(fontSize: 14),
                       ),
-                      const SizedBox(height: 2),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
+
+                      const SizedBox(width: AppDimens.p12), // Sağ sütunla araya nefes boşluğu
+
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Icon(
-                              widget.model.pnlColor == AppColors.profit ? Icons.arrow_upward : Icons.arrow_downward,
-                              size: 10,
-                              color: widget.model.pnlColor
-                          ),
-                          const SizedBox(width: 2),
                           Text(
-                            "${widget.model.pnlValueText} (${widget.model.pnlPercent})",
-                            style: AppTextStyles.captionBold.copyWith(color: widget.model.pnlColor, fontSize: 11),
+                              widget.model.currentPriceText,
+                              style: AppTextStyles.priceLarge.copyWith(fontSize: 16)
+                          ),
+                          const SizedBox(height: AppDimens.p4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: AppDimens.p6, vertical: AppDimens.p2),
+                            decoration: BoxDecoration(
+                              color: dailyColor.withValues(alpha: AppAlphas.bgLight),
+                              borderRadius: BorderRadius.circular(AppDimens.radiusXs),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(dailyIcon, color: dailyColor, size: AppDimens.iconXs),
+                                const SizedBox(width: AppDimens.p2),
+                                Text(
+                                    dailyChangeText,
+                                    style: AppTextStyles.captionBold.copyWith(color: dailyColor, fontSize: 11)
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: AppDimens.p12),
+                  Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
+                  const SizedBox(height: AppDimens.p12),
+
+                  // Alt Kısım: 3 Sütunlu İstatistikler 
+                  // [DÜZELTİLDİ]: Her bir istatistik sütunu Expanded ile sarıldı, sayılar büyüse bile taşamaz.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildLabeledStat(
+                          AppStrings.form.amount,
+                          widget.model.amountText,
+                          AppColors.textPrimary,
+                          subText: widget.model.totalValueText,
+                          alignment: CrossAxisAlignment.start,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildLabeledStat(
+                          AppStrings.labels.avgCost,
+                          widget.model.avgCostText,
+                          AppColors.textPrimary,
+                          alignment: CrossAxisAlignment.center,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildLabeledStat(
+                          AppStrings.labels.totalPnl,
+                          widget.model.pnlValueText,
+                          widget.model.pnlColor,
+                          subText: widget.model.pnlPercent,
+                          alignment: CrossAxisAlignment.end, // En sağdaki sütunu sağa dayıyoruz
+                        ),
+                      ),
+                    ],
+                  )
                 ],
               ),
             ),
           ),
 
-          // --- EXPANDED BODY (Details & Real Live Chart) ---
+          // --- EXPANDED BODY: CANLI GRAFİK ---
           if (_isExpanded)
             Padding(
               padding: const EdgeInsets.fromLTRB(AppDimens.p12, 0, AppDimens.p12, AppDimens.p16),
               child: Column(
                 children: [
-                  Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: 1),
+                  Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
                   const SizedBox(height: AppDimens.p12),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildDetailStat(AppStrings.labels.avgCost, widget.model.avgCostText),
-                      _buildDetailStat(
-                          AppStrings.labels.totalPnl,
-                          widget.model.pnlValueText,
-                          color: widget.model.pnlColor
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: AppDimens.p16),
 
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -214,7 +246,9 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                               selectedRange: _selectedRange,
                               onScrub: (point) {
                                 if (_hoveredPoint?.timestamp != point?.timestamp) {
-                                  setState(() => _hoveredPoint = point);
+                                  Future.microtask(() {
+                                    if (mounted) setState(() => _hoveredPoint = point);
+                                  });
                                 }
                               },
                             );
@@ -231,20 +265,47 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
     );
   }
 
-  Widget _buildDetailStat(String label, String value, {Color? color}) {
+  // Özel alignment alacak şekilde güncellendi
+  Widget _buildLabeledStat(String label, String value, Color valueColor, {String? subText, required CrossAxisAlignment alignment}) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: alignment,
       children: [
-        Text(label, style: AppTextStyles.caption),
-        const SizedBox(height: 2),
         Text(
-          value,
-          style: AppTextStyles.bodyMedium.copyWith(
-              color: color ?? AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-              fontSize: 13
+          label.toUpperCase(),
+          style: AppTextStyles.captionBold.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 9,
+              letterSpacing: 0.5
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: AppDimens.p4),
+        FittedBox(
+          fit: BoxFit.scaleDown, // Sayı çok devasa olursa fontu küçültür, yan sütuna taşmaz
+          child: Text(
+              value,
+              style: AppTextStyles.bodyMedium.copyWith(
+                  color: valueColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold
+              )
           ),
         ),
+        if (subText != null) ...[
+          const SizedBox(height: AppDimens.p2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+                subText,
+                style: AppTextStyles.caption.copyWith(
+                    color: valueColor.withValues(alpha: AppAlphas.textSecondary),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500
+                )
+            ),
+          ),
+        ]
       ],
     );
   }
