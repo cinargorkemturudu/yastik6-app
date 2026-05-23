@@ -19,6 +19,7 @@ class UniversalAssetPickerSheet extends ConsumerStatefulWidget {
   final List<PriceQuote>? customAssetList;
   final String? customEmptyMessage;
   final TransactionType? transactionType;
+  final AssetType? initialAssetType;
 
   const UniversalAssetPickerSheet({
     super.key,
@@ -27,6 +28,7 @@ class UniversalAssetPickerSheet extends ConsumerStatefulWidget {
     this.customAssetList,
     this.customEmptyMessage,
     this.transactionType,
+    this.initialAssetType,
   });
 
   @override
@@ -37,8 +39,34 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = "";
 
-  String _selectedCategory = AppStrings.categories.all;
+  late String _selectedCategory;
   final List<String> _categories = CategoryHelper.coreCategories;
+
+  @override
+  void initState() {
+    super.initState();
+    // [EKLENDİ]: İlk açılışta gelen Enum'ı okuyup sekmeyi ayarlıyoruz!
+    if (widget.initialAssetType != null) {
+      switch (widget.initialAssetType!) {
+        case AssetType.metal:
+          _selectedCategory = AppStrings.categories.metal;
+          break;
+        case AssetType.currency:
+          _selectedCategory = AppStrings.categories.currency;
+          break;
+        case AssetType.stock:
+          _selectedCategory = AppStrings.categories.stock;
+          break;
+        case AssetType.crypto:
+          _selectedCategory = AppStrings.categories.crypto;
+          break;
+        default:
+          _selectedCategory = AppStrings.categories.all;
+      }
+    } else {
+      _selectedCategory = AppStrings.categories.all;
+    }
+  }
 
   @override
   void dispose() {

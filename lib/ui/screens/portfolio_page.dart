@@ -13,7 +13,7 @@ class PortfolioPage extends ConsumerWidget {
   // [DÜZELTİLDİ]: String? categoryFilter yerine AssetType? filterType (Enum) kullanıyoruz.
   // Junior Notu: Alt katmanlar (Page, Section vb.) her zaman Enum ile çalışmalıdır.
   final AssetType? filterType;
-  final Function(TransactionType) onTransaction;
+  final Function(TransactionType, AssetType?) onTransaction;
 
   const PortfolioPage({
     super.key,

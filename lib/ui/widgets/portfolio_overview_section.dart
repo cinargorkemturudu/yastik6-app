@@ -24,7 +24,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
   final String title;
   // [DÜZELTİLDİ]: String? categoryFilter yerine AssetType? (Enum) kullanıyoruz.
   final AssetType? filterType;
-  final Function(TransactionType) onTransaction;
+  final Function(TransactionType, AssetType?) onTransaction;
   final VoidCallback onLegendTap;
 
   const PortfolioOverviewSection({
@@ -158,6 +158,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
                     data: currentDonut,
                     onTransaction: onTransaction,
                     onLegendTap: onLegendTap,
+                    currentFilter: filterType,
                   ),
                 ),
               ),
