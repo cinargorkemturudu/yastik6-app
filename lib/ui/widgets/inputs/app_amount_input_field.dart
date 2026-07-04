@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // [YENİ EKLENDİ]: TextInputFormatter için gerekli
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
@@ -61,11 +62,9 @@ class AppAmountInputField extends StatelessWidget {
 
               // THE CORE ENGINE (TextField)
               Expanded(
-                // [DEĞİŞTİRİLDİ]: TextField, klavye girdilerini anlık dinlemek için ValueListenableBuilder ile sarmalandı
                 child: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: textController,
                   builder: (context, value, child) {
-                    // [YENİ EKLENDİ]: Metin uzunluğuna göre dinamik font boyutu hesaplanıyor
                     double currentFontSize = FontScaleUtil.getScaledFontSize(
                       textLength: value.text.length,
                       baseFontSize: activeTextStyle.fontSize ?? 24.0,
@@ -78,6 +77,18 @@ class AppAmountInputField extends StatelessWidget {
                       keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                       textAlign: textAlign,
+
+                      // [YENİ EKLENDİ]: Görsel Virgül/Nokta Manipülasyonu
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          // Kullanıcının yazdığı metindeki virgülleri anında noktaya çevirir.
+                          // Karakter sayısı değişmediği için imleç (cursor) konumu bozulmaz.
+                          return newValue.copyWith(
+                            text: newValue.text.replaceAll(',', '.'),
+                          );
+                        }),
+                      ],
+
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         isDense: true,
@@ -86,7 +97,6 @@ class AppAmountInputField extends StatelessWidget {
                         hintStyle:
                         defaultTextStyle.copyWith(color: AppColors.textMuted),
                       ),
-                      // [DEĞİŞTİRİLDİ]: Sabit stil yerine hesaplanan dinamik font boyutu (currentFontSize) verildi
                       style: activeTextStyle.copyWith(fontSize: currentFontSize),
                       onChanged: onChanged,
                     );
