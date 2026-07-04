@@ -270,9 +270,16 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
             maxLines: 2,
           ),
           const SizedBox(width: AppDimens.p12),
-          Text("${AppStrings.labels.buy}: ${AppFormatter.amount(quote.bid, "",
-              precision: quote.type == AssetType.crypto ? 4 : 2)} TL",
-              style: AppTextStyles.caption),
+
+          // [DÜZELTİLDİ]: isInput'a göre Alış (Bid) veya Satış (Ask) fiyatını ekrana basıyoruz.
+          Text(
+            "${isInput ? 'Alış' : 'Satış'}: ${AppFormatter.amount(
+              isInput ? quote.bid : quote.ask, // Satılan için bid, Alınan için ask
+              "",
+              precision: quote.type == AssetType.crypto ? 4 : 2,
+            )} TL",
+            style: AppTextStyles.caption,
+          ),
         ],
       )
           : null,

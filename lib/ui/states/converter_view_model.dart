@@ -42,12 +42,29 @@ final converterViewModelProvider = NotifierProvider<ConverterViewModel, Converte
 class ConverterViewModel extends Notifier<ConverterState> {
   @override
   ConverterState build() {
-    final marketState = ref.read(livePriceProvider).valueOrNull;
+    // 1. PUSU (LISTENER): Arka plandaki fiyat akışını sessizce dinleriz.
+    ref.listen(livePriceProvider, (previous, next) {
+      final marketState = next.valueOrNull;
 
-    PriceQuote? defFrom = marketState?.priceMap['USDTRY=X'] ?? marketState?.priceMap['USD'];
-    PriceQuote? defTo = marketState?.priceMap['GRAM_ALTIN'] ?? marketState?.priceMap['GA'];
+      if (marketState != null) {
+        // Sadece kullanıcının ekranı hala boşsa (müdahale etmediyse) varsayılanları ata
+        if (state.fromAsset == null || state.toAsset == null) {
+          PriceQuote? defFrom = marketState.priceMap['HAS_ALTIN'] ?? marketState.priceMap['HAS'];
+          PriceQuote? defTo = marketState.priceMap['TRY'] ?? marketState.priceMap['TRY=X'];
 
-    return ConverterState(fromAsset: defFrom, toAsset: defTo);
+          // State'i anında güncelleyerek UI'ı tetikle
+          state = state.copyWith(fromAsset: defFrom, toAsset: defTo);
+        }
+      }
+    });
+
+    // 2. İLK BAKIŞ (SENKRON): Eğer veriler halihazırda önbellekte (cache) varsa, 
+    // hiç bekletmeden ekranı ilk saniyeden dolu başlat.
+    final initialMarketState = ref.read(livePriceProvider).valueOrNull;
+    PriceQuote? initialFrom = initialMarketState?.priceMap['HAS_ALTIN'] ?? initialMarketState?.priceMap['HAS'];
+    PriceQuote? initialTo = initialMarketState?.priceMap['TRY'] ?? initialMarketState?.priceMap['TRY=X'];
+
+    return ConverterState(fromAsset: initialFrom, toAsset: initialTo);
   }
 
   ConverterState _enforceFirewall(ConverterState newState) {

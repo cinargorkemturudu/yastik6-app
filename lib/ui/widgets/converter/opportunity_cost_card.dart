@@ -1,4 +1,4 @@
-import 'package:decimal/decimal.dart'; // [FIXED] Added missing import
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -14,10 +14,10 @@ import 'package:yastik_alti/domain/models/entities/asset.dart';
 import '../../utils/app_safe_text.dart';
 
 class OpportunityCostCard extends ConsumerWidget {
-  final Decimal amount; // [FIXED] Type
+  final Decimal amount;
   final PriceQuote fromAsset;
   final PriceQuote toAsset;
-  final Decimal currentResult; // [FIXED] Type
+  final Decimal currentResult;
   final DateTime? selectedDate;
   final Function(DateTime) onDateSelected;
 
@@ -57,7 +57,8 @@ class OpportunityCostCard extends ConsumerWidget {
                 ),
               )
             else
-              _buildAnalysisResult(ref),
+            // Pass the unwrapped date explicitly to avoid unwrap errors later
+              _buildAnalysisResult(ref, selectedDate!),
           ],
         ),
       ),
@@ -107,10 +108,11 @@ class OpportunityCostCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildAnalysisResult(WidgetRef ref) {
-    final fromPriceAsync = ref.watch(historicalPriceProvider(HistoricalPriceParams(assetCode: fromAsset.assetCode, date: selectedDate!)));
-    final toPriceAsync = ref.watch(historicalPriceProvider(HistoricalPriceParams(assetCode: toAsset.assetCode, date: selectedDate!)));
+  Widget _buildAnalysisResult(WidgetRef ref, DateTime validDate) {
+    final fromPriceAsync = ref.watch(historicalPriceProvider(HistoricalPriceParams(assetCode: fromAsset.assetCode, date: validDate)));
+    final toPriceAsync = ref.watch(historicalPriceProvider(HistoricalPriceParams(assetCode: toAsset.assetCode, date: validDate)));
 
+    // 1. Loading State
     if (fromPriceAsync.isLoading || toPriceAsync.isLoading) {
       return const Center(
         child: Padding(
@@ -120,15 +122,32 @@ class OpportunityCostCard extends ConsumerWidget {
       );
     }
 
+    // 2. Error State (Prevents the blank screen if DB/Provider fails)
+    if (fromPriceAsync.hasError || toPriceAsync.hasError) {
+      debugPrint("Historical Price Error - From: ${fromPriceAsync.error}, To: ${toPriceAsync.error}");
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppDimens.p8),
+          child: Text(
+            "Geçmiş veri yüklenirken bir hata oluştu.", // Hardcoded fallback just in case
+            style: AppTextStyles.caption.copyWith(color: AppColors.lossAccent),
+          ),
+        ),
+      );
+    }
+
     final Decimal? pastFromPrice = fromPriceAsync.valueOrNull;
     final Decimal? pastToPrice = toPriceAsync.valueOrNull;
 
+    // 3. Null or Invalid Data State
     if (pastFromPrice == null || pastToPrice == null || pastToPrice <= Decimal.zero) {
-      return Text(AppStrings.messages.noPastDataFound,
-          style: AppTextStyles.caption.copyWith(color: AppColors.lossAccent));
+      return Text(
+          AppStrings.messages.noPastDataFound,
+          style: AppTextStyles.caption.copyWith(color: AppColors.lossAccent)
+      );
     }
 
-    // [FIXED] Conduct financial parity operations strictly in Rational/Decimal space
+    // 4. Parity and Results Calculations
     Decimal parity = (pastFromPrice.toRational() / pastToPrice.toRational()).toDecimal(scaleOnInfinitePrecision: 10);
     Decimal pastResult = amount * parity;
 
@@ -151,6 +170,7 @@ class OpportunityCostCard extends ConsumerWidget {
         break;
     }
 
+    // 5. Final UI Render
     return Container(
       padding: const EdgeInsets.all(AppDimens.p12),
       decoration: BoxDecoration(
@@ -168,10 +188,9 @@ class OpportunityCostCard extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // [DÜZELTİLDİ]: Büyük rakamların taşmasını önlemek için Flexible
               Flexible(
                 child: Text(
-                  AppFormatter.amount(pastResult, ""), // [FIXED] Safely cast to double at the UI boundary
+                  AppFormatter.amount(pastResult, ""),
                   style: AppTextStyles.h2.copyWith(fontSize: 18),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -199,7 +218,6 @@ class OpportunityCostCard extends ConsumerWidget {
             children: [
               Icon(isProfit ? Icons.trending_up : Icons.trending_down, color: trendColor, size: 20),
               const SizedBox(width: AppDimens.p6),
-              // [DÜZELTİLDİ]: Kar/zarar oranının taşmasını önlemek için Flexible
               Flexible(
                 child: Text(
                   "${AppStrings.converter.difference} ${AppFormatter.signedAmount(netDiff)} (${AppFormatter.signedPercent(percentDiff)})",
