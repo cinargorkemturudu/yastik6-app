@@ -9,10 +9,11 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:yastik_alti/data/local/db_constants.dart';
 
+import '../../core/crypto_service.dart';
 import '../../core/env.dart';
 
 abstract class CloudBackupStrategy {
-  Future<bool> backupDatabase();
+  Future<bool> backupDatabase(File backupFile); // İMZA GÜNCELLENDİ
   Future<bool> restoreDatabase();
   Future<GoogleSignInAccount?> signIn();
   Future<void> signOut();
@@ -33,21 +34,10 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
     }
   }
 
-  Future<File?> _getDatabaseFile() async {
-    final dbFolder = await getDatabasesPath();
-    final dbPath = join(dbFolder, DbConstants.dbName);
-    final dbFile = File(dbPath);
-
-    if (await dbFile.exists()) return dbFile;
-    return null;
-  }
-
   Future<http.Client?> _getAuthenticatedClient(GoogleSignInAccount account) async {
     try {
       var authorization = await account.authorizationClient.authorizationForScopes(_scopes);
-      // Since authorizeScopes returns a non-nullable object or throws an error, we don't need a null check
       authorization ??= await account.authorizationClient.authorizeScopes(_scopes);
-
       return authorization.authClient(scopes: _scopes);
     } catch (e) {
       throw Exception("Yetkilendirme Hatası: $e");
@@ -55,12 +45,7 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
   }
 
   @override
-  Future<bool> backupDatabase() async {
-    final dbFile = await _getDatabaseFile();
-    if (dbFile == null) {
-      throw Exception("Yerel veritabanı bulunamadı. Lütfen önce uygulamaya bir işlem ekleyin.");
-    }
-
+  Future<bool> backupDatabase(File backupFile) async {
     final account = await signIn();
     if (account == null) {
       throw Exception("Google Girişi başarısız oldu.");
@@ -73,7 +58,8 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
 
     try {
       final driveApi = drive.DriveApi(client);
-      final media = drive.Media(dbFile.openRead(), dbFile.lengthSync());
+      // Artık parametre olarak gelen dosyayı yüklüyoruz
+      final media = drive.Media(backupFile.openRead(), backupFile.lengthSync());
       final cloudFileName = 'yastik6_backup_${DbConstants.dbName}';
 
       final driveFile = drive.File()
@@ -137,6 +123,7 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
       await for (final data in media.stream) {
         dataStore.addAll(data);
       }
+      // Şifreli haliyle doğrudan veritabanı yoluna yazıyoruz, servis bunu alıp çözecek.
       await dbFile.writeAsBytes(dataStore, flush: true);
 
       debugPrint("Google Drive Geri yükleme Başarılı!");
@@ -150,7 +137,6 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
   Future<GoogleSignInAccount?> signIn() async {
     try {
       await _ensureInitialized();
-      // authenticate() automatically throws a PlatformException if cancelled, no null check needed
       return await _googleSignIn.authenticate();
     } catch (error) {
       throw Exception("Giriş Hatası: $error");
@@ -167,28 +153,14 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
 class ICloudBackupStrategy implements CloudBackupStrategy {
   final String _containerId = 'iCloud.com.yourdomain.yastikAlti';
 
-  Future<File?> _getLocalDatabaseFile() async {
-    final dbFolder = await getDatabasesPath();
-    final dbPath = join(dbFolder, DbConstants.dbName);
-    final dbFile = File(dbPath);
-
-    if (await dbFile.exists()) return dbFile;
-    return null;
-  }
-
   @override
-  Future<bool> backupDatabase() async {
-    final dbFile = await _getLocalDatabaseFile();
-    if (dbFile == null) {
-      throw Exception("Yerel veritabanı bulunamadı. Lütfen önce uygulamaya bir işlem ekleyin.");
-    }
-
+  Future<bool> backupDatabase(File backupFile) async {
     try {
       final cloudFileName = 'yastik6_backup_${DbConstants.dbName}';
 
       await ICloudStorage.upload(
         containerId: _containerId,
-        filePath: dbFile.path,
+        filePath: backupFile.path, // Parametre gelen dosya
         destinationRelativePath: cloudFileName,
         onProgress: (stream) {
           stream.listen((progress) => debugPrint('iCloud Yükleniyor: %$progress'));
@@ -234,11 +206,63 @@ class ICloudBackupStrategy implements CloudBackupStrategy {
 
 class CloudBackupService {
   final CloudBackupStrategy _strategy;
+  final CryptoService _cryptoService;
 
-  CloudBackupService() : _strategy = Platform.isIOS ? ICloudBackupStrategy() : GoogleDriveBackupStrategy();
+  CloudBackupService({required CryptoService crypto})
+      : _cryptoService = crypto,
+        _strategy = Platform.isIOS ? ICloudBackupStrategy() : GoogleDriveBackupStrategy();
 
-  Future<bool> backupDatabase() => _strategy.backupDatabase();
-  Future<bool> restoreDatabase() => _strategy.restoreDatabase();
+  Future<bool> backupDatabase() async {
+    final dbFolder = await getDatabasesPath();
+    final dbPath = join(dbFolder, DbConstants.dbName);
+    final dbFile = File(dbPath);
+
+    if (!await dbFile.exists()) {
+      throw Exception("Yerel veritabanı bulunamadı. Lütfen önce uygulamaya bir işlem ekleyin.");
+    }
+
+    // 1. Oku ve Şifrele
+    final rawBytes = await dbFile.readAsBytes();
+    final encryptedPayload = _cryptoService.encryptBytes(rawBytes);
+
+    // 2. Şifreli veriyi geçici bir dosyaya yaz (Ek paket kurmamak için aynı dizini kullanıyoruz)
+    final tempEncryptedFile = File(join(dbFolder, '${DbConstants.dbName}.enc'));
+    await tempEncryptedFile.writeAsString(encryptedPayload);
+
+    // 3. Stratejiye ver, buluta yüklesin
+    final success = await _strategy.backupDatabase(tempEncryptedFile);
+
+    // 4. Çöpü temizle (Şifreli geçici dosyayı sil)
+    if (await tempEncryptedFile.exists()) {
+      await tempEncryptedFile.delete();
+    }
+
+    return success;
+  }
+
+  Future<bool> restoreDatabase() async {
+    // 1. Strateji veriyi indirip dbFile konumuna yazar (Şu an şifreli halde)
+    final success = await _strategy.restoreDatabase();
+    if (!success) return false;
+
+    final dbFolder = await getDatabasesPath();
+    final dbPath = join(dbFolder, DbConstants.dbName);
+    final dbFile = File(dbPath);
+
+    if (await dbFile.exists()) {
+      // 2. Şifreli veriyi oku
+      final encryptedContent = await dbFile.readAsString();
+
+      // 3. Şifreyi çöz
+      final decryptedBytes = _cryptoService.decryptToBytes(encryptedContent);
+
+      // 4. Saf ve kullanılabilir veritabanını yerine yaz
+      await dbFile.writeAsBytes(decryptedBytes, flush: true);
+    }
+
+    return true;
+  }
+
   Future<GoogleSignInAccount?> signIn() => _strategy.signIn();
   Future<void> signOut() => _strategy.signOut();
 }
