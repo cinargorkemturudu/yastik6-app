@@ -60,7 +60,7 @@ class _TickerSettingsSheetState extends ConsumerState<TickerSettingsSheet> {
           ),
           const SizedBox(height: AppDimens.p16),
 
-          const Text('Şerit Kişiselleştirme', style: AppTextStyles.h3),
+          Text('Şerit Kişiselleştirme', style: AppTextStyles.h3),
           const SizedBox(height: AppDimens.p16),
 
           Padding(

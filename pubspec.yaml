@@ -34,6 +34,8 @@ dependencies:
   googleapis_auth: ^2.0.0
   icloud_storage: ^2.2.0
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
+  flutter_secure_storage: ^10.3.1
+  encrypt: ^5.0.3
   
 dev_dependencies:
   flutter_test:

@@ -26,16 +26,19 @@ import 'package:yastik_alti/domain/irepositories/transaction_irepository.dart';
 import 'package:yastik_alti/domain/services/portfolio_service.dart';
 import 'package:yastik_alti/domain/services/price_service.dart';
 
+import '../core/crypto_service.dart';
 import '../core/env.dart';
 import '../data/local/market_cache_local.data.dart';
 import '../domain/services/cloud_backup_service.dart';
 
 // --- CORE INFRASTRUCTURE ---
 
-// [DEĞİŞTİRİLDİ] Provider -> StateProvider oldu. Bu sayede veritabanı değiştiğinde,
-// bu provider'a bağımlı tüm Repo'lar ve Service'ler otomatik olarak kendini yeni veritabanı ile baştan oluşturur.
 final databaseProvider = StateProvider<Database>((ref) {
   throw UnimplementedError('Database must be overridden in main.dart');
+});
+
+final cryptoServiceProvider = Provider<CryptoService>((ref) {
+  return CryptoService();
 });
 
 final httpClientProvider = Provider<http.Client>((ref) {
@@ -58,7 +61,6 @@ final remoteHaremDataProvider = Provider<RemoteMarketData>((ref) {
   );
 });
 
-// Local Data Sources (SQLite Helpers)
 final assetLocalDataProvider = Provider((ref) => AssetLocalData());
 final transactionLocalDataProvider = Provider((ref) => TransactionLocalData());
 final allocationLocalDataProvider = Provider((ref) => AllocationLocalData());
@@ -74,7 +76,7 @@ final priceRepoProvider = Provider<PriceIRepository>((ref) {
 
 final assetRepoProvider = Provider<AssetIRepository>((ref) {
   final local = ref.watch(assetLocalDataProvider);
-  final db = ref.watch(databaseProvider); // [KRİTİK] StateProvider güncellendiğinde bu Repo otomatik baştan oluşur
+  final db = ref.watch(databaseProvider);
   return AssetRepo(local, db);
 });
 
@@ -94,7 +96,8 @@ final transactionRepoProvider = Provider<TransactionIRepository>((ref) {
 // --- SERVICES ---
 
 final cloudBackupServiceProvider = Provider<CloudBackupService>((ref) {
-  return CloudBackupService();
+  final crypto = ref.watch(cryptoServiceProvider); // Inject edildi
+  return CloudBackupService(crypto: crypto);
 });
 
 final priceServiceProvider = Provider<PriceService>((ref) {
