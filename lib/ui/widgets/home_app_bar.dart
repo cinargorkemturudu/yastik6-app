@@ -8,7 +8,7 @@ import 'package:yastik_alti/domain/models/dtos/market_state.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
-import 'package:yastik_alti/ui/theme/app_dimens.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/theme/app_dimens.dart';
 
 class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const HomeAppBar({super.key});
@@ -39,7 +39,7 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         _buildHealthIndicator(context, health, marketState),
-        const SizedBox(width: AppDimens.p12), // [DÜZELTİLDİ]
+        const SizedBox(width: AppDimens.p12),
       ],
     );
   }
@@ -51,7 +51,7 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
     switch (health) {
       case DataHealthStatus.healthy:
         icon = Icons.cloud_done_rounded;
-        color = AppColors.profitAccent;
+        color = AppColors.brandBlue;
         break;
       case DataHealthStatus.degraded:
         icon = Icons.warning_amber_rounded;
@@ -59,19 +59,19 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
         break;
       case DataHealthStatus.offline:
         icon = Icons.cloud_off_rounded;
-        color = AppColors.lossAccent;
+        color = Colors.grey;
         break;
     }
 
     return GestureDetector(
       onTap: () => _showDiagnosticDialog(context, health, state),
       child: Container(
-        padding: const EdgeInsets.all(AppDimens.p8), // [DÜZELTİLDİ]
+        padding: const EdgeInsets.all(AppDimens.p8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: AppAlphas.hover), // [DÜZELTİLDİ]
+          color: color.withValues(alpha: AppAlphas.hover),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: color, size: AppDimens.iconMd), // [DÜZELTİLDİ]
+        child: Icon(icon, color: color, size: AppDimens.iconMd),
       ),
     );
   }
@@ -102,12 +102,12 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (health == DataHealthStatus.healthy) {
           titleText = AppStrings.titles.systemHealthy;
           titleIcon = Icons.cloud_done_rounded;
-          titleColor = AppColors.profitAccent;
+          titleColor = AppColors.brandBlue;
           bodyText = AppStrings.messages.systemHealthyBody;
         } else if (health == DataHealthStatus.offline) {
           titleText = AppStrings.titles.connectionLost;
           titleIcon = Icons.cloud_off_rounded;
-          titleColor = AppColors.lossAccent;
+          titleColor = Colors.grey;
           bodyText = AppStrings.messages.offlineBody;
         } else {
           titleText = AppStrings.titles.delayedData;
@@ -123,7 +123,7 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
           title: Row(
             children: [
               Icon(titleIcon, color: titleColor),
-              const SizedBox(width: AppDimens.p8), // [DÜZELTİLDİ]
+              const SizedBox(width: AppDimens.p8),
               Text(
                 titleText,
                 style: AppTextStyles.h3,
@@ -136,28 +136,37 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
             children: [
               Text(
                 bodyText,
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.captionBold,
               ),
-              const SizedBox(height: AppDimens.p16), // [DÜZELTİLDİ]
+              const SizedBox(height: AppDimens.p16),
 
               if (categoryUpdates.isNotEmpty)
                 Column(
                   children: categoryUpdates.entries.map((entry) {
                     final isCategoryStale = staleCategories.contains(entry.key);
+
                     final rowColor = isCategoryStale ? Colors.orangeAccent : AppColors.textPrimary;
 
+                    final rowStyle = isCategoryStale
+                        ? AppTextStyles.bodyMedium.copyWith(color: rowColor, fontWeight: FontWeight.w700)
+                        : AppTextStyles.bodyMedium;
+
+                    final timeStyle = isCategoryStale
+                        ? AppTextStyles.captionBold.copyWith(color: rowColor)
+                        : AppTextStyles.caption;
+
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: AppDimens.p8), // [DÜZELTİLDİ]
+                      padding: const EdgeInsets.only(bottom: AppDimens.p8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                              AssetVisualMapper.categoryNameOf(entry.key),
-                              style: AppTextStyles.bodyMedium.copyWith(color: rowColor, fontWeight: FontWeight.w600)
+                            AssetVisualMapper.categoryNameOf(entry.key),
+                            style: rowStyle,
                           ),
                           Text(
-                              timeFormat.format(entry.value.toLocal()),
-                              style: AppTextStyles.caption.copyWith(color: rowColor) // [DÜZELTİLDİ]
+                            timeFormat.format(entry.value.toLocal()),
+                            style: timeStyle,
                           ),
                         ],
                       ),

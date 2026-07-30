@@ -22,7 +22,6 @@ import 'package:yastik_alti/ui/screens/history_screen.dart';
 
 class PortfolioOverviewSection extends ConsumerWidget {
   final String title;
-  // [DÜZELTİLDİ]: String? categoryFilter yerine AssetType? (Enum) kullanıyoruz.
   final AssetType? filterType;
   final Function(TransactionType, AssetType?) onTransaction;
   final VoidCallback onLegendTap;
@@ -30,7 +29,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
   const PortfolioOverviewSection({
     super.key,
     required this.title,
-    required this.filterType, // [GÜNCELLENDİ]
+    required this.filterType,
     required this.onTransaction,
     required this.onLegendTap,
   });
@@ -56,7 +55,6 @@ class PortfolioOverviewSection extends ConsumerWidget {
       final summary = portfolioData.realizedSummary;
 
       if (summary != null) {
-        // [GÜVENLİ İLETİM]: filterType zaten Enum olduğu için UniversalPortfolioMapper hatasız çalışır.
         currentDonut = UniversalPortfolioMapper.toRealizedDonutModel(summary, filterType, assetNames);
         allLots = UniversalPortfolioMapper.toRealizedLotUiModels(summary: summary, assetNames: assetNames, assetFilter: filterType);
       } else {
@@ -72,7 +70,6 @@ class PortfolioOverviewSection extends ConsumerWidget {
         allLots = [];
       }
     } else {
-      // [GÜVENLİ İLETİM]: filterType Enum olarak Mapper'a gönderiliyor.
       currentDonut = UniversalPortfolioMapper.toDonutModel(portfolioData.snapshot, filterType, assetNames);
       allLots = UniversalPortfolioMapper.toLotUiModels(positions: portfolioData.snapshot.positions, allocationsMap: portfolioData.allocationsMap, assetNames: assetNames, assetFilter: filterType);
     }
@@ -85,12 +82,13 @@ class PortfolioOverviewSection extends ConsumerWidget {
         height: MediaQuery.of(context).size.height,
         color: AppColors.background,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: AppDimens.pagePadding, horizontal: AppDimens.pagePadding),
+          // [GÜNCELLENDİ] Üst ve iç boşluklar sıkıştırılarak yukarıdaki ölü alan ortadan kaldırıldı
+          padding: const EdgeInsets.fromLTRB(AppDimens.pagePadding, 4, AppDimens.pagePadding, AppDimens.pagePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const CurrentRatesTickerSection(),
-              const SizedBox(height: AppDimens.p10),
+              const SizedBox(height: 4),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -105,7 +103,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
                   ),
                   const SizedBox(width: AppDimens.p4),
                   Transform.scale(
-                    scale: 0.7,
+                    scale: 0.65,
                     child: Switch(
                       value: uiState.isRealizedMode,
                       onChanged: (_) => vmNotifier.toggleRealizedMode(),
@@ -116,20 +114,20 @@ class PortfolioOverviewSection extends ConsumerWidget {
                 ],
               ),
 
-              const SizedBox(height: AppDimens.p10),
+              const SizedBox(height: 2),
 
               Text(
                 title,
-                style: AppTextStyles.h2.copyWith(fontSize: 18),
+                style: AppTextStyles.h2.copyWith(fontSize: 16),
               ),
-              const SizedBox(height: AppDimens.p10),
+              const SizedBox(height: 4),
 
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
                   currentDonut.totalValueText,
-                  style: AppTextStyles.heroAmount.copyWith(fontSize: 34),
+                  style: AppTextStyles.heroAmount.copyWith(fontSize: 30),
                 ),
               ),
 
@@ -137,18 +135,19 @@ class PortfolioOverviewSection extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: AppDimens.p4),
+                    const SizedBox(height: 2),
                     Text(
                       currentDonut.totalPnlText,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: currentDonut.pnlColor,
                         fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
                     ),
                   ],
                 ),
 
-              const SizedBox(height: AppDimens.p16),
+              const SizedBox(height: 8),
 
               SizedBox(
                 height: AppDimens.donutSectionHeight,
@@ -163,7 +162,7 @@ class PortfolioOverviewSection extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: AppDimens.p24),
+              const SizedBox(height: 16),
 
               if (recentLots.isNotEmpty)
                 RecentLotsSection(

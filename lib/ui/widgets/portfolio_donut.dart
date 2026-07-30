@@ -6,6 +6,7 @@ import 'package:yastik_alti/ui/ui_models/portfolio_donut_model.dart';
 import 'package:yastik_alti/ui/utils/app_formatter.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
+import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import '../../domain/models/entities/asset.dart';
 import 'app_clickable_wrapper.dart';
 
@@ -37,7 +38,8 @@ class PortfolioDonut extends StatelessWidget {
         height: AppDimens.donutSectionHeight,
         child: Row(
           children: [
-            Expanded(
+            SizedBox(
+              width: AppDimens.donutSize,
               child: Center(
                 child: Stack(
                   alignment: Alignment.center,
@@ -68,8 +70,7 @@ class PortfolioDonut extends StatelessWidget {
             ),
             if (!isEmpty || currentData.items.isNotEmpty) ...[
               const SizedBox(width: AppDimens.p12),
-              SizedBox(
-                width: AppDimens.donutSize,
+              Expanded(
                 child: _Legend(
                   items: currentData.items,
                   onTap: onLegendTap,
@@ -94,23 +95,24 @@ class _Legend extends StatelessWidget {
     final sortedItems = List<PortfolioDonutItem>.from(items)
       ..sort((a, b) => b.tlValue.compareTo(a.tlValue));
 
-    final displayItems = sortedItems.take(3).toList();
-    final hasMore = sortedItems.length > 3;
+    // [GÜNCELLENDİ] Ekranda artık 3 yerine 4 öğe gösteriliyor
+    final displayItems = sortedItems.take(4).toList();
+    final hasMore = sortedItems.length > 4;
 
     return AppClickableWrapper(
       onTap: onTap,
       borderRadius: AppDimens.radiusMd,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppDimens.p8, horizontal: AppDimens.p8),
+        padding: const EdgeInsets.symmetric(vertical: AppDimens.p4, horizontal: AppDimens.p4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ...displayItems.map((i) => _buildLegendItem(i)),
             if (hasMore)
-              const Padding(
-                  padding: EdgeInsets.only(left: AppDimens.p16, top: AppDimens.p4),
-                  child: Text("...", style: TextStyle(color: AppColors.textMuted, fontSize: 20, fontWeight: FontWeight.bold, height: 0.5))),
+              Padding(
+                  padding: const EdgeInsets.only(left: AppDimens.p16, top: AppDimens.p2),
+                  child: Text("...", style: AppTextStyles.h1.copyWith(height: 0.5))),
           ],
         ),
       ),
@@ -119,48 +121,53 @@ class _Legend extends StatelessWidget {
 
   Widget _buildLegendItem(PortfolioDonutItem i) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppDimens.p6),
+      // [GÜNCELLENDİ] 4 öğenin sığması için dikey boşluklar sıkıştırıldı (bottom overflow önlendi)
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-              width: AppDimens.legendCircle,
-              height: AppDimens.legendCircle,
+              width: 8,
+              height: 8,
               decoration: BoxDecoration(color: i.color, shape: BoxShape.circle)
           ),
           const SizedBox(width: AppDimens.p8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  // Hem .IS temizliği hem de uzun Harem isimleri için koruma
-                    AppFormatter.cleanAssetCode(i.title),
-                    maxLines: 1, // Uzun isimlerin ikinci satıra geçmesini engeller
-                    overflow: TextOverflow.ellipsis, // Sığmayan kısma "..." koyar
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)
+                  AppFormatter.cleanAssetCode(i.title),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, fontSize: 12, height: 1.0),
                 ),
+                const SizedBox(height: 1),
                 Text(
-                    "${AppFormatter.pnlValue(i.pnlTl)} (${AppFormatter.percent(i.pnlPct)})",
-                    maxLines: 1, // [YENİ]: PnL metninin taşmasını kesin olarak engeller
-                    overflow: TextOverflow.ellipsis, // [YENİ]: Sığmayan kısma "..." koyar
-                    style: TextStyle(color: i.pnlTl.toPnlColor(), fontSize: 11)
+                  "${AppFormatter.pnlValue(i.pnlTl)} (${AppFormatter.percent(i.pnlPct)})",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.captionBold.copyWith(color: i.pnlTl.toPnlColor(), fontSize: 10),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: AppDimens.p6),
+          const SizedBox(width: AppDimens.p4),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                  "${AppFormatter.amount(i.tlValue, "")} TL",
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)
+                "${AppFormatter.amount(i.tlValue, "")} TL",
+                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, fontSize: 12),
               ),
-              Text(
+              if (i.quantity > Decimal.zero)
+                Text(
                   "${AppFormatter.amount(i.quantity, "")} adet",
-                  style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7), fontSize: 10)
-              ),
+                  style: AppTextStyles.caption.copyWith(fontSize: 9),
+                ),
             ],
           ),
         ],
