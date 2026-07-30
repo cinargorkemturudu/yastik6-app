@@ -19,8 +19,20 @@ class AppTextStyles {
   static final TextStyle bodyMedium = _body.copyWith(fontSize: 14, fontWeight: FontWeight.normal);
 
   // --- ALT BİLGİ & ETİKETLER (IBM Plex Sans) ---
-  static final TextStyle caption = _body.copyWith(fontSize: 11, fontWeight: FontWeight.normal, color: AppColors.textMuted);
-  static final TextStyle captionBold = _body.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted);
+  // Hierarchy achieved strictly via font thickness. 
+  // Minimum w400 enforced to prevent OLED anti-aliasing washout.
+  // All colors point directly to textPrimary to eliminate semantic ghosts.
+  static final TextStyle caption = _body.copyWith(
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textPrimary,
+  );
+
+  static final TextStyle captionBold = _body.copyWith(
+    fontSize: 11,
+    fontWeight: FontWeight.w600, // Adjusted to w600 to maintain contrast against the w400 caption
+    color: AppColors.textPrimary,
+  );
 
   // --- FİYAT / RAKAM STİLLERİ (Inter - Rakamlar için daha okunaklı) ---
   static final TextStyle priceLarge = _heading.copyWith(fontSize: 15, fontWeight: FontWeight.w700);

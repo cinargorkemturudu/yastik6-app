@@ -7,9 +7,9 @@ import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
-import 'package:yastik_alti/ui/states/portfolio_provider.dart'; // [EKLENDİ]
-import 'package:yastik_alti/ui/utils/app_formatter.dart'; // [EKLENDİ]
-import 'package:collection/collection.dart'; // [EKLENDİ] firstWhereOrNull için
+import 'package:yastik_alti/ui/states/portfolio_provider.dart';
+import 'package:yastik_alti/ui/utils/app_formatter.dart';
+import 'package:collection/collection.dart';
 
 class LotCard extends ConsumerStatefulWidget {
   final LotUiModel model;
@@ -54,7 +54,7 @@ class _LotCardState extends ConsumerState<LotCard> {
             const SizedBox(height: AppDimens.p12),
             Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: 1),
             const SizedBox(height: AppDimens.p12),
-            _buildExpandedDetails(ref), // [GÜNCELLENDİ] ref parametresi eklendi
+            _buildExpandedDetails(ref),
           ],
         ],
       ),
@@ -129,7 +129,7 @@ class _LotCardState extends ConsumerState<LotCard> {
               ],
               Text(
                 widget.model.dateText,
-                style: AppTextStyles.caption.copyWith(color: AppColors.textMuted, fontSize: 10),
+                style: AppTextStyles.caption.copyWith(fontSize: 10),
               ),
             ],
           ),
@@ -167,19 +167,18 @@ class _LotCardState extends ConsumerState<LotCard> {
             const SizedBox(height: 2),
             Text(
               widget.model.profitPercent,
-              style: AppTextStyles.caption.copyWith(color: pnlColor?.withValues(alpha: AppAlphas.textSecondary) ?? AppColors.textMuted, fontSize: 10),
+              style: AppTextStyles.caption.copyWith(color: pnlColor, fontSize: 10),
             ),
           ],
         ),
 
         const SizedBox(width: AppDimens.p6),
-        Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: AppColors.textMuted, size: 18),
+        Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: AppColors.brandBlue, size: 18),
       ],
     );
   }
 
   Widget _buildExpandedDetails(WidgetRef ref) {
-    // [YENİ] Varlığın genel ortalama maliyetini çekiyoruz
     final portfolio = ref.watch(portfolioProvider);
     final position = portfolio.snapshot.positions.firstWhereOrNull((p) => p.asset.symbol == widget.model.symbol);
     final generalAvgCostText = position != null ? AppFormatter.money(position.averageBuyPrice) : "-";
@@ -203,7 +202,7 @@ class _LotCardState extends ConsumerState<LotCard> {
                   widget.model.unrealizedColor ?? AppColors.textPrimary,
                 ),
               ),
-              Container(width: 1, height: 24, color: AppColors.textMuted.withValues(alpha: AppAlphas.bgMedium)),
+              Container(width: 1, height: 24, color: AppColors.textPrimary.withValues(alpha: AppAlphas.bgMedium)),
               Expanded(
                 child: _buildStatItem(
                   AppStrings.labels.realizedSold.toUpperCase(),
@@ -225,7 +224,6 @@ class _LotCardState extends ConsumerState<LotCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text("${AppStrings.labels.buy}: ${widget.model.buyPriceText}", style: AppTextStyles.caption.copyWith(fontSize: 9)),
-                // [DÜZELTİLDİ] Genel ortalama maliyet gösteriliyor
                 Text("${AppStrings.labels.avgCost} $generalAvgCostText", style: AppTextStyles.caption.copyWith(fontSize: 9)),
               ],
             ),
@@ -248,7 +246,7 @@ class _LotCardState extends ConsumerState<LotCard> {
             padding: const EdgeInsets.only(bottom: AppDimens.p6),
             child: Row(
               children: [
-                const Icon(Icons.subdirectory_arrow_right, color: AppColors.textMuted, size: 12),
+                const Icon(Icons.subdirectory_arrow_right, color: AppColors.brandBlue, size: 12),
                 const SizedBox(width: AppDimens.p6),
                 Text(sale.date, style: AppTextStyles.caption.copyWith(fontSize: 10)),
                 const Spacer(),
@@ -275,13 +273,13 @@ class _LotCardState extends ConsumerState<LotCard> {
             if (widget.onEdit != null)
               TextButton.icon(
                 onPressed: widget.onEdit,
-                icon: const Icon(Icons.edit, size: 12, color: AppColors.textMuted),
+                icon: const Icon(Icons.edit, size: 12, color: AppColors.brandBlue),
                 label: Text(AppStrings.common.edit.toUpperCase(), style: AppTextStyles.caption.copyWith(fontSize: 10)),
               ),
             if (widget.onDelete != null)
               TextButton.icon(
                 onPressed: widget.onDelete,
-                icon: const Icon(Icons.delete, size: 12, color: AppColors.textMuted),
+                icon: const Icon(Icons.delete, size: 12, color: AppColors.brandBlue),
                 label: Text(AppStrings.common.delete.toUpperCase(), style: AppTextStyles.caption.copyWith(fontSize: 10)),
               ),
           ],
