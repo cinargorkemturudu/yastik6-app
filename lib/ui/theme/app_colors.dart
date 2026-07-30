@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
-/// Tasarım sistemindeki tüm saydamlık (Alpha/Opacity) standartları.
-/// Renklerin [withValues(alpha: ...)] metoduyla birlikte kullanılır.
 class AppAlphas {
+  AppAlphas._();
+
   // Çok hafif arka planlar (Çizgiler, gölgeler, çok silik yüzeyler)
   static const double faint = 0.05;
   static const double hover = 0.10;
@@ -13,14 +12,9 @@ class AppAlphas {
   static const double borderLight = 0.30;
   static const double overlay = 0.40;
 
-  // Belirgin vurgular (Buton kenarlıkları)
+  // Belirgin vurgular (Buton kenarlıkları, seçili olmayan ikonlar)
   static const double borderActive = 0.50;
-
-  // Metin saydamlıkları (Kapsayıcı metinler, ikincil bilgiler)
-  static const double textMuted = 0.70;
-  static const double textSecondary = 0.80;
 }
-
 class AppColors {
   AppColors._();
 
@@ -31,31 +25,30 @@ class AppColors {
   static const Color inputFill = Color(0xFF252525);
   static const Color sellSlipBg = Color(0xFF2C1B1B);
 
-  // --- Metin Renkleri ---
+  // --- Metin Renkleri (Unified to pure white per design spec) ---
   static const Color textPrimary = Colors.white;
-  static const Color textSecondary = Colors.white70;
-  static const Color textMuted = Colors.white54;
-  static const Color textFaint = Colors.white38;
+  static const Color textSecondary = Colors.white;
+  static const Color textMuted = Colors.white;
+  static const Color textFaint = Colors.white;
 
   // --- Anlamsal Renkler ---
   static const Color profit = Color(0xFF4CAF50);
   static const Color loss = Color(0xFFE53935);
-  static const Color neutral = Colors.white54;
+  static const Color neutral = Colors.white; // Unified to white to avoid gray text
 
   static const Color profitAccent = Colors.greenAccent;
   static const Color lossAccent = Colors.redAccent;
-  static const Color brandBlue = Colors.blueAccent;
+  static const Color brandBlue = Color(0xFF7466FF); // Updated to the new brand color
 
   // --- Kategori Renkleri ---
   static const Color metal = Color(0xFFFFD700);
   static const Color silver = Color(0xFFB0BEC5);
   static const Color currency = Color(0xFF2ECC71);
-  static const Color stock = Color(0xFF3498DB); // Hisse için Mavi tonu
-  static const Color crypto = Color(0xFFF7931A); // Kripto için Turuncu/Altın tonu
-  static const Color indicator = Color(0xFF9B59B6); // Göstergeler için Mor tonu
+  static const Color stock = Color(0xFF3498DB);
+  static const Color crypto = Color(0xFFF7931A);
+  static const Color indicator = Color(0xFF9B59B6);
 
   // --- VIP Varlık Renkleri ---
-  // Uygulama içinde özel renge sahip olmasını istediğimiz ana varlıklar.
   static const Map<String, Color> _vipAssetColors = {
     // Madenler
     'XAU': metal,
@@ -93,4 +86,5 @@ class AppColors {
     final index = cleanCode.hashCode.abs() % Colors.primaries.length;
     return Colors.primaries[index];
   }
+  
 }

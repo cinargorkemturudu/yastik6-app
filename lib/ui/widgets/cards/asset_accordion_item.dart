@@ -299,7 +299,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
             child: Text(
                 subText,
                 style: AppTextStyles.caption.copyWith(
-                    color: valueColor.withValues(alpha: AppAlphas.textSecondary),
+                    color: valueColor,
                     fontSize: 11,
                     fontWeight: FontWeight.w500
                 )

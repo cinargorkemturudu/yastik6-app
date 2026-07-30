@@ -157,7 +157,7 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
                           ),
                           Text(
                               timeFormat.format(entry.value.toLocal()),
-                              style: AppTextStyles.caption.copyWith(color: rowColor.withValues(alpha: AppAlphas.textMuted)) // [DÜZELTİLDİ]
+                              style: AppTextStyles.caption.copyWith(color: rowColor) // [DÜZELTİLDİ]
                           ),
                         ],
                       ),

@@ -6,6 +6,7 @@ import 'package:yastik_alti/domain/models/value_objects/price_point.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
+import 'package:yastik_alti/ui/theme/app_text_style.dart'; // Added AppTextStyles import
 import 'package:yastik_alti/ui/utils/chart_data_smoother.dart';
 import 'package:yastik_alti/ui/utils/app_formatter.dart';
 
@@ -47,7 +48,7 @@ class AssetHistoryChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.isEmpty) {
       return Center(
-        child: Text(AppStrings.messages.emptyData, style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.bgMedium))),
+        child: Text(AppStrings.messages.emptyData, style: AppTextStyles.bodyMedium),
       );
     }
 
@@ -60,8 +61,8 @@ class AssetHistoryChart extends StatelessWidget {
     if (smoothData.length < 2) {
       return Center(
         child: Text(
-            AppStrings.messages.noDataForRange,
-            style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.textMuted))
+          AppStrings.messages.noDataForRange,
+          style: AppTextStyles.bodyMedium,
         ),
       );
     }
@@ -84,8 +85,8 @@ class AssetHistoryChart extends StatelessWidget {
     if (startTime == endTime) {
       return Center(
         child: Text(
-            AppStrings.messages.noDataForRange,
-            style: TextStyle(color: Colors.white.withValues(alpha: AppAlphas.textMuted))
+          AppStrings.messages.noDataForRange,
+          style: AppTextStyles.bodyMedium,
         ),
       );
     }
@@ -128,7 +129,7 @@ class AssetHistoryChart extends StatelessWidget {
 
                 return Padding(
                   padding: const EdgeInsets.only(top: AppDimens.p8),
-                  child: Text(format.format(date), style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                  child: Text(format.format(date), style: AppTextStyles.caption),
                 );
               },
             ),
@@ -141,8 +142,8 @@ class AssetHistoryChart extends StatelessWidget {
               getTitlesWidget: (value, meta) {
                 if (value <= minY || value >= maxY) return const SizedBox();
                 return Text(
-                    AppFormatter.amountFromDouble(value),
-                    style: const TextStyle(color: Colors.white54, fontSize: 10)
+                  AppFormatter.amountFromDouble(value),
+                  style: AppTextStyles.caption,
                 );
               },
             ),
@@ -156,36 +157,36 @@ class AssetHistoryChart extends StatelessWidget {
             if (avgCost != null && avgCost!.toDouble() >= minY && avgCost!.toDouble() <= maxY)
               HorizontalLine(
                 y: avgCost!.toDouble(),
-                color: Colors.white.withValues(alpha: AppAlphas.textMuted),
+                color: Colors.white.withValues(alpha: AppAlphas.overlay), // Switched to structural alpha
                 strokeWidth: 1.5,
                 dashArray: [5, 5],
                 label: HorizontalLineLabel(
                   show: true,
                   alignment: Alignment.topRight,
                   padding: const EdgeInsets.only(right: AppDimens.p4, bottom: AppDimens.p4),
-                  style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.captionBold, // Uses pure white weight-based hierarchy
                   labelResolver: (_) => '${AppStrings.labels.avgShort}: ${AppFormatter.amount(avgCost!, "")}',
                 ),
               ),
             HorizontalLine(
               y: maxPrice,
-              color: Colors.greenAccent.withValues(alpha: AppAlphas.bgMedium),
+              color: Colors.greenAccent.withValues(alpha: AppAlphas.bgMedium), // Line background uses structural alpha
               strokeWidth: 1,
               label: HorizontalLineLabel(
                   show: true,
                   alignment: Alignment.bottomLeft,
-                  style: TextStyle(color: Colors.greenAccent.withValues(alpha: AppAlphas.textSecondary), fontSize: 9),
+                  style: AppTextStyles.captionBold.copyWith(color: Colors.greenAccent), // Removed alpha from text
                   labelResolver: (_) => '↑ ${AppStrings.labels.maxShort}'
               ),
             ),
             HorizontalLine(
               y: minPrice,
-              color: Colors.redAccent.withValues(alpha: AppAlphas.bgMedium),
+              color: Colors.redAccent.withValues(alpha: AppAlphas.bgMedium), // Line background uses structural alpha
               strokeWidth: 1,
               label: HorizontalLineLabel(
                   show: true,
                   alignment: Alignment.topLeft,
-                  style: TextStyle(color: Colors.redAccent.withValues(alpha: AppAlphas.textSecondary), fontSize: 9),
+                  style: AppTextStyles.captionBold.copyWith(color: Colors.redAccent), // Removed alpha from text
                   labelResolver: (_) => '↓ ${AppStrings.labels.minShort}'
               ),
             ),
@@ -246,7 +247,7 @@ class AssetHistoryChart extends StatelessWidget {
             }
           },
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => Colors.blueGrey.shade900.withValues(alpha: 0.95),
+            getTooltipColor: (_) => Colors.blueGrey.shade900.withValues(alpha: 0.95), // Structural background
             tooltipPadding: const EdgeInsets.all(AppDimens.p8),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((LineBarSpot touchedSpot) {
@@ -262,10 +263,9 @@ class AssetHistoryChart extends StatelessWidget {
 
                   return LineTooltipItem(
                     '$type\n${AppFormatter.money(tx.price)}\n${AppFormatter.amount(tx.amount, "")} ${AppStrings.labels.units}$profitStr',
-                    TextStyle(
-                      color: tx.isBuy ? Colors.greenAccent : Colors.redAccent,
+                    AppTextStyles.bodyMedium.copyWith(
+                      color: tx.isBuy ? Colors.greenAccent : Colors.redAccent, // Preserves pure profit/loss colors
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
                     ),
                   );
                 }
@@ -273,11 +273,11 @@ class AssetHistoryChart extends StatelessWidget {
                 final date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
                 return LineTooltipItem(
                   '${AppFormatter.moneyFromDouble(touchedSpot.y)}\n',
-                  TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
+                  AppTextStyles.bodyLarge.copyWith(color: color, fontWeight: FontWeight.bold),
                   children: [
                     TextSpan(
                       text: DateFormat('dd MMM HH:mm').format(date),
-                      style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.normal),
+                      style: AppTextStyles.caption, // Uses weight for hierarchy, not color
                     )
                   ],
                 );
@@ -287,7 +287,7 @@ class AssetHistoryChart extends StatelessWidget {
           getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
             return spotIndexes.map((_) {
               return TouchedSpotIndicatorData(
-                const FlLine(color: Colors.white30, strokeWidth: 1, dashArray: [3, 3]),
+                const FlLine(color: Colors.white30, strokeWidth: 1, dashArray: [3, 3]), // Structural line alpha
                 FlDotData(getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
                   radius: 4,
                   color: Colors.white,
