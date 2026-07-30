@@ -24,6 +24,17 @@ class UniversalPortfolioMapper {
     return AppFormatter.cleanAssetCode(symbol);
   }
 
+  // HELPER METHOD: Returns category display names
+  static String _getCategoryName(AssetType type) {
+    switch (type) {
+      case AssetType.metal: return "Madenler";
+      case AssetType.currency: return "Döviz";
+      case AssetType.crypto: return "Kripto Paralar";
+      case AssetType.stock: return "Hisse Senetleri";
+      case AssetType.indicator: return "Göstergeler";
+    }
+  }
+
   static List<LotUiModel> toLotUiModels({
     required List<AssetPosition> positions,
     required Map<String, List<Map<String, dynamic>>> allocationsMap,
@@ -59,7 +70,6 @@ class UniversalPortfolioMapper {
             amount: AppFormatter.amount(amount, pos.asset.symbol),
             price: AppFormatter.money(sellPrice),
             profitText: AppFormatter.pnlValue(profit),
-            // [FIXED] Removed .toDouble() leftover
             profitColor: profit.toPnlColor(),
           );
         }).toList();
@@ -81,7 +91,6 @@ class UniversalPortfolioMapper {
           totalCostText: AppFormatter.money(lotProfit.cost),
           profitPercent: AppFormatter.signedPercent(lotProfit.profitPct),
           currentUnrealizedPnl: AppFormatter.pnlValue(lotProfit.profit),
-          // [FIXED] Removed .toDouble() leftover
           unrealizedColor: lotProfit.profit.toPnlColor(),
           totalRealizedPnl: null,
           realizedColor: null,
@@ -152,31 +161,74 @@ class UniversalPortfolioMapper {
     final Decimal netCost = totalTl - totalPnlTl;
     final double totalPnlPct = filter == null ? snapshot.totalProfitPct : (netCost > Decimal.zero ? (totalPnlTl.toRational() / netCost.toRational()).toDouble() : 0.0);
 
+    List<PortfolioDonutItem> donutItems = [];
+
+    if (filter == null) {
+      // GENEL PORTFÖY ÖZETİ: Group by category
+      final Map<AssetType, Decimal> typeValues = {};
+      final Map<AssetType, Decimal> typePnls = {};
+
+      for (final pos in items) {
+        final type = pos.asset.type;
+        typeValues[type] = (typeValues[type] ?? Decimal.zero) + pos.currentValue;
+        typePnls[type] = (typePnls[type] ?? Decimal.zero) + pos.profit;
+      }
+
+      final sortedEntries = typeValues.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+
+      donutItems = List.generate(sortedEntries.length, (index) {
+        final type = sortedEntries[index].key;
+        final tlValue = sortedEntries[index].value;
+        final pnlTl = typePnls[type]!;
+        final typeNetCost = tlValue - pnlTl;
+        final pnlPct = typeNetCost > Decimal.zero ? (pnlTl.toRational() / typeNetCost.toRational()).toDouble() : 0.0;
+
+        // Calculate Monochromatic Opacity (Min 25%)
+        final safeAlpha = (1.0 - (index * 0.25)).clamp(0.25, 1.0);
+
+        return PortfolioDonutItem(
+          type: type,
+          title: _getCategoryName(type),
+          quantity: Decimal.zero, // Categories don't have a single quantity
+          tlValue: tlValue,
+          pnlTl: pnlTl,
+          pnlPct: pnlPct,
+          color: AppColors.brandBlue.withValues(alpha: safeAlpha),
+        );
+      });
+    } else {
+      // KATEGORİ DETAYI: Group by asset 
+      final sortedItems = List<AssetPosition>.from(items)..sort((a, b) => b.currentValue.compareTo(a.currentValue));
+
+      donutItems = List.generate(sortedItems.length, (index) {
+        final pos = sortedItems[index];
+        final rawName = assetNames[pos.asset.symbol] ?? pos.asset.name;
+        final isStock = pos.asset.type == AssetType.stock;
+        final isMetal = pos.asset.type == AssetType.metal;
+        final displayName = isStock ? pos.asset.symbol : (isMetal ? rawName : AppFormatter.cleanAssetCode(pos.asset.symbol));
+
+        final safeAlpha = (1.0 - (index * 0.20)).clamp(0.20, 1.0);
+
+        return PortfolioDonutItem(
+          type: pos.asset.type,
+          title: displayName,
+          quantity: pos.totalAmount,
+          tlValue: pos.currentValue,
+          pnlTl: pos.profit,
+          pnlPct: pos.profitPct,
+          color: AppColors.brandBlue.withValues(alpha: safeAlpha),
+        );
+      });
+    }
+
     return PortfolioDonutModel(
       totalTl: totalTl,
       totalPnlTl: totalPnlTl,
       totalPnlPct: totalPnlPct,
       totalValueText: AppFormatter.money(totalTl),
       totalPnlText: "${AppFormatter.pnlValue(totalPnlTl)} (${AppFormatter.signedPercent(totalPnlPct)})",
-      // [FIXED] Removed .toDouble() leftover
       pnlColor: totalPnlTl.toPnlColor(),
-      items: items.map((pos) {
-        final rawName = assetNames[pos.asset.symbol] ?? pos.asset.name;
-        final isStock = pos.asset.type == AssetType.stock;
-        final isMetal = pos.asset.type == AssetType.metal;
-
-        final displayName = isStock ? pos.asset.symbol : (isMetal ? rawName : AppFormatter.cleanAssetCode(pos.asset.symbol));
-
-        return PortfolioDonutItem(
-          type: pos.asset.type,
-          title: displayName,
-          quantity: pos.totalAmount, // [FIXED] Mapping quantity
-          tlValue: pos.currentValue,
-          pnlTl: pos.profit,
-          pnlPct: pos.profitPct,
-          color: AppColors.getAssetColor(pos.asset.symbol),
-        );
-      }).toList(),
+      items: donutItems,
     );
   }
 
@@ -189,31 +241,65 @@ class UniversalPortfolioMapper {
 
     final Decimal totalTl = filter == null ? summary.totalLifetimeProfit : items.fold(Decimal.zero, (sum, i) => sum + i.totalProfit);
 
+    List<PortfolioDonutItem> donutItems = [];
+
+    if (filter == null) {
+      final Map<AssetType, Decimal> typeValues = {};
+
+      for (final asset in items) {
+        final type = asset.assetType;
+        typeValues[type] = (typeValues[type] ?? Decimal.zero) + asset.totalProfit;
+      }
+
+      final sortedEntries = typeValues.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+
+      donutItems = List.generate(sortedEntries.length, (index) {
+        final type = sortedEntries[index].key;
+        final pnlTl = sortedEntries[index].value;
+        final safeAlpha = (1.0 - (index * 0.25)).clamp(0.25, 1.0);
+
+        return PortfolioDonutItem(
+          type: type,
+          title: _getCategoryName(type),
+          quantity: Decimal.zero,
+          tlValue: pnlTl,
+          pnlTl: pnlTl,
+          pnlPct: 0.0,
+          color: AppColors.brandBlue.withValues(alpha: safeAlpha),
+        );
+      });
+    } else {
+      final sortedItems = List.from(items)..sort((a, b) => (b as dynamic).totalProfit.compareTo((a as dynamic).totalProfit));
+
+      donutItems = List.generate(sortedItems.length, (index) {
+        final asset = sortedItems[index];
+        final rawName = assetNames[asset.symbol] ?? asset.symbol;
+        final isStock = asset.assetType == AssetType.stock;
+        final isMetal = asset.assetType == AssetType.metal;
+        final displayName = isStock ? asset.symbol : (isMetal ? rawName : AppFormatter.cleanAssetCode(asset.symbol));
+
+        final safeAlpha = (1.0 - (index * 0.20)).clamp(0.20, 1.0);
+
+        return PortfolioDonutItem(
+          type: asset.assetType,
+          title: displayName,
+          quantity: asset.totalAmountSold,
+          tlValue: asset.totalProfit,
+          pnlTl: asset.totalProfit,
+          pnlPct: asset.itemPnlPct,
+          color: AppColors.brandBlue.withValues(alpha: safeAlpha),
+        );
+      });
+    }
+
     return PortfolioDonutModel(
       totalTl: totalTl,
       totalPnlTl: totalTl,
       totalPnlPct: summary.totalPnlPct,
       totalValueText: AppFormatter.money(totalTl),
       totalPnlText: "${AppFormatter.pnlValue(totalTl)} (${AppFormatter.signedPercent(summary.totalPnlPct)})",
-      // [FIXED] Removed .toDouble() leftover[cite: 3]
       pnlColor: totalTl.toPnlColor(),
-      items: items.map((asset) {
-        final rawName = assetNames[asset.symbol] ?? asset.symbol;
-        final isStock = asset.assetType == AssetType.stock;
-        final isMetal = asset.assetType == AssetType.metal;
-
-        final displayName = isStock ? asset.symbol : (isMetal ? rawName : AppFormatter.cleanAssetCode(asset.symbol));
-
-        return PortfolioDonutItem(
-          type: asset.assetType,
-          title: displayName,
-          quantity: asset.totalAmountSold, // [FIXED] Mapping quantity
-          tlValue: asset.totalProfit,
-          pnlTl: asset.totalProfit,
-          pnlPct: asset.itemPnlPct,
-          color: AppColors.getAssetColor(asset.symbol),
-        );
-      }).toList(),
+      items: donutItems,
     );
   }
 
@@ -248,7 +334,6 @@ class UniversalPortfolioMapper {
           totalCostText: AppFormatter.money((tx.sellPrice * tx.amountSold)),
           profitPercent: AppFormatter.signedPercent(tx.profitPct),
           totalRealizedPnl: AppFormatter.pnlValue(tx.profit),
-          // [FIXED] Removed .toDouble() leftover[cite: 3]
           realizedColor: tx.profit.toPnlColor(),
           currentUnrealizedPnl: null,
           unrealizedColor: null,
