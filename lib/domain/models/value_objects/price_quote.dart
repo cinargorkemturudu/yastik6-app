@@ -1,6 +1,5 @@
 import 'package:decimal/decimal.dart';
 import 'package:yastik_alti/domain/models/entities/asset.dart';
-// [FIXED] Removed the AppFormatter import. Domain should be UI-agnostic.
 
 class PriceQuote {
   final String assetCode;
@@ -8,10 +7,11 @@ class PriceQuote {
   final AssetType type;
   final Decimal bid;
   final Decimal ask;
-  final double changeRate; // Kept as double (Ratio)
+  final double changeRate;
   final DateTime asOf;
   final DateTime expiresAt;
   final bool isConvertedtoTry;
+  final bool isMarketOpen;
 
   PriceQuote({
     required this.assetCode,
@@ -23,6 +23,7 @@ class PriceQuote {
     required this.asOf,
     required this.expiresAt,
     this.isConvertedtoTry = false,
+    this.isMarketOpen = true,
   });
 
   Decimal get midPrice => (bid + ask) * Decimal.parse('0.5');
@@ -30,30 +31,9 @@ class PriceQuote {
   Decimal get spread => ask - bid;
 
   bool get isStale {
-    final nowLocal = DateTime.now();
-    final asOfLocal = asOf.toLocal();
-    final diff = nowLocal.difference(asOfLocal);
-    final diffInMinutes = diff.inMinutes;
-    final diffInHours = diff.inHours;
+    if (!isMarketOpen) return false;
 
-    if (type == AssetType.crypto) {
-      return diffInMinutes > 30;
-    }
-
-    if (type == AssetType.indicator) {
-      return diffInHours > 24;
-    }
-
-    if (diffInMinutes < 60) return false;
-
-    if (nowLocal.weekday == DateTime.saturday || nowLocal.weekday == DateTime.sunday) {
-      return diffInHours > 72;
-    }
-
-    if (nowLocal.weekday == DateTime.monday && nowLocal.hour < 10) {
-      return diffInHours > 72;
-    }
-
-    return diffInHours > 24;
+    final nowUtc = DateTime.now().toUtc();
+    return nowUtc.isAfter(expiresAt);
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:circle_flags/circle_flags.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:yastik_alti/domain/models/entities/asset.dart';
 import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
@@ -91,12 +91,14 @@ class AssetVisualMapper {
   static Widget _resolveCryptoAvatar(String code) {
     final cleanCode = code.toUpperCase();
 
-    // 1. MdiIcons Destekli Majörler (İkon + Renk)
-    // StartsWith kullanarak SOLUSDT gibi paritelerde sondaki USDT'nin eşleşmesini engelliyoruz.
+   
+    // ignore: deprecated_member_use
     if (cleanCode.startsWith('BTC')) return _buildIconAvatar(MdiIcons.bitcoin, AppColors.crypto);
+    // ignore: deprecated_member_use
     if (cleanCode.startsWith('ETH')) return _buildIconAvatar(MdiIcons.ethereum, _VisualConstants.ethereumBlue);
+    // ignore: deprecated_member_use
     if (cleanCode.startsWith('LTC')) return _buildIconAvatar(MdiIcons.litecoin, _VisualConstants.litecoinSilver);
-
+    
     // 2. Yeni Nesil Yıldızlar (Marka Rengi + Baş Harf)
     if (cleanCode.startsWith('USDT')) return _buildColoredTextAvatar(code, _VisualConstants.tetherGreen);
     if (cleanCode.startsWith('BNB')) return _buildColoredTextAvatar(code, _VisualConstants.bnbYellow);

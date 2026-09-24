@@ -73,6 +73,23 @@ class AppFormatter {
     return "$prefix${amount(value, "", precision: precision)}";
   }
 
+  /// Formats large numbers compactly using Turkish localized suffixes (Mr, M)
+  /// and respects the tr_TR comma separator for decimals.
+  static String compactMoney(Decimal amount, [String symbol = "TL"]) {
+    final double val = amount.toDouble().abs();
+    final String sign = amount < Decimal.zero ? "-" : "";
+
+    if (val >= 1000000000) {
+      // Milyar
+      return '$sign${_getFormatter(2).format(val / 1000000000)} Mr $symbol';
+    } else if (val >= 1000000) {
+      // Milyon
+      return '$sign${_getFormatter(2).format(val / 1000000)} M $symbol';
+    }
+
+    return money(amount);
+  }
+
   // --- PERCENTAGES & PNL ---
 
   /// Formats a double value as a percentage.
@@ -133,15 +150,21 @@ class AppFormatter {
 /// Provides color mapping for Decimal Profit & Loss (PnL) values.
 extension DecimalPnlColor on Decimal {
   Color toPnlColor() {
-    if (this == Decimal.zero) return const Color(0xFF9E9E9E); // Neutral grey
-    return this > Decimal.zero ? const Color(0xFF4CAF50) : const Color(0xFFE53935); // Green for profit, Red for loss
+    final double val = toDouble();
+
+    // If the value is between -0.005 and +0.005, it rounds to 0.00 on the UI.
+    if (val.abs() < 0.005) return const Color(0xFF9E9E9E); // Neutral grey
+
+    return val > 0 ? const Color(0xFF4CAF50) : const Color(0xFFE53935); // Green for profit, Red for loss
   }
 }
 
 /// Provides color mapping for double Profit & Loss (PnL) values.
 extension DoublePnlColor on double {
   Color toPnlColor() {
-    if (this == 0.0) return const Color(0xFF9E9E9E);
-    return this > 0 ? const Color(0xFF4CAF50) : const Color(0xFFE53935);
+    // If the value is between -0.005 and +0.005, it rounds to 0.00 on the UI.
+    if (abs() < 0.005) return const Color(0xFF9E9E9E); // Neutral grey
+
+    return this > 0 ? const Color(0xFF4CAF50) : const Color(0xFFE53935); // Green for profit, Red for loss
   }
 }

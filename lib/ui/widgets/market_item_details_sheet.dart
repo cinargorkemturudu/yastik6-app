@@ -50,7 +50,6 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
         Decimal txAmount = tx.amount;
         Decimal txPrice = tx.purchasePrice;
 
-        // Safe Decimal division for average cost calculation[cite: 1]
         Decimal currentAvg = totalBuyAmount > Decimal.zero
             ? (totalBuyCost.toRational() / totalBuyAmount.toRational()).toDecimal(scaleOnInfinitePrecision: 10)
             : Decimal.zero;
@@ -64,9 +63,9 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
         realTransactions.add(ChartTransactionPoint(
           date: tx.purchaseDate,
           isBuy: tx.type == TransactionType.buy,
-          amount: txAmount, // [FIXED]: Passed Decimal directly as per updated ChartTransactionPoint[cite: 1]
-          price: txPrice,  // [FIXED]: Passed Decimal directly
-          realizedProfit: profit, // [FIXED]: Removed the '?' suffix[cite: 1]
+          amount: txAmount,
+          price: txPrice,
+          realizedProfit: profit,
         ));
 
         if (tx.type == TransactionType.buy) {
@@ -90,9 +89,8 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
       final pnl = displayPriceDecimal - realAvgCost;
       final double pnlRatio = (pnl.toRational() / realAvgCost.toRational()).toDouble();
 
-      // Delegated to AppFormatter for high-precision string representation[cite: 1]
       pnlString = "${AppFormatter.pnlValue(pnl)} (${AppFormatter.signedPercent(pnlRatio)})";
-      pnlColor = pnl.toPnlColor(); // [FIXED]: Using the new Decimal extension logic[cite: 1]
+      pnlColor = pnl.toPnlColor();
     }
 
     return Dialog(
@@ -125,35 +123,44 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
                   )
                 ],
               ),
-              const SizedBox(height: AppDimens.p16),
 
-              Container(
-                padding: const EdgeInsets.all(AppDimens.p12),
-                decoration: BoxDecoration(
-                    color: AppColors.background.withValues(alpha: AppAlphas.borderActive),
-                    borderRadius: BorderRadius.circular(AppDimens.radiusMd)
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _StatWidget(
-                        title: isHovering ? AppStrings.labels.selectedPrice : AppStrings.labels.currentPrice,
-                        value: AppFormatter.money(displayPriceDecimal),
-                        color: isHovering ? assetColor : AppColors.textPrimary
+              const SizedBox(height: AppDimens.p16),
+              Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
+              const SizedBox(height: AppDimens.p12),
+
+              // --- STATS BOX REBUILT: 3-Column Expanded Layout ---
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _StatWidget(
+                      title: isHovering ? AppStrings.labels.selectedPrice : AppStrings.labels.currentPrice,
+                      value: AppFormatter.money(displayPriceDecimal),
+                      color: isHovering ? assetColor : AppColors.textPrimary,
+                      alignment: CrossAxisAlignment.start, // Left aligned
                     ),
-                    _StatWidget(
-                        title: AppStrings.labels.avgCost,
-                        value: realAvgCost != null ? AppFormatter.money(realAvgCost) : '-',
-                        color: AppColors.textSecondary
+                  ),
+                  Expanded(
+                    child: _StatWidget(
+                      title: AppStrings.labels.avgCost,
+                      value: realAvgCost != null ? AppFormatter.money(realAvgCost) : '-',
+                      color: AppColors.textSecondary,
+                      alignment: CrossAxisAlignment.center, // Center aligned
                     ),
-                    _StatWidget(
-                        title: AppStrings.labels.unitPnl,
-                        value: pnlString,
-                        color: pnlColor
+                  ),
+                  Expanded(
+                    child: _StatWidget(
+                      title: AppStrings.labels.unitPnl,
+                      value: pnlString,
+                      color: pnlColor,
+                      alignment: CrossAxisAlignment.end, // Right aligned
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+
+              const SizedBox(height: AppDimens.p12),
+              Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
               const SizedBox(height: AppDimens.p16),
 
               SingleChildScrollView(
@@ -185,7 +192,7 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
                     return AssetHistoryChart(
                       data: data,
                       transactions: realTransactions,
-                      avgCost: realAvgCost, // [FIXED]: Removed the '?' suffix[cite: 1]
+                      avgCost: realAvgCost,
                       color: assetColor,
                       selectedRange: _selectedRange,
                       onScrub: (point) {
@@ -221,11 +228,15 @@ class _MarketItemDetailsSheetState extends ConsumerState<MarketItemDetailsSheet>
       label: Text(label),
       selected: isSelected,
       selectedColor: AppColors.brandBlue.withValues(alpha: AppAlphas.bgMedium),
-      backgroundColor: AppColors.inputFill,
+      backgroundColor: Colors.transparent, // [GÜNCELLENDİ]: Removed dark background
       showCheckmark: false,
-      labelStyle: AppTextStyles.bodyMedium.copyWith(
-          color: isSelected ? AppColors.brandBlue : AppColors.textMuted,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+      padding: const EdgeInsets.symmetric(horizontal: AppDimens.p4, vertical: 0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide.none, // [GÜNCELLENDİ]: Removed the border to match accordion
+      ),
+      labelStyle: AppTextStyles.captionBold.copyWith(
+        color: isSelected ? AppColors.brandBlue : AppColors.textMuted,
       ),
       onSelected: (_) => setState(() => _selectedRange = rangeValue),
     );
@@ -236,16 +247,42 @@ class _StatWidget extends StatelessWidget {
   final String title;
   final String value;
   final Color color;
+  final CrossAxisAlignment alignment; // [EKLENDİ]: Hizalama kontrolü
 
-  const _StatWidget({required this.title, required this.value, required this.color});
+  const _StatWidget({
+    required this.title,
+    required this.value,
+    required this.color,
+    required this.alignment,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: alignment,
       children: [
-        Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-        const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.captionBold.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 9,
+              letterSpacing: 0.5
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: AppDimens.p4),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+              value,
+              style: AppTextStyles.bodyMedium.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: color
+              )
+          ),
+        ),
       ],
     );
   }

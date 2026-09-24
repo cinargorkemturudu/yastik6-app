@@ -8,7 +8,7 @@ import 'package:yastik_alti/ui/states/market_view_model.dart';
 import 'package:yastik_alti/ui/widgets/cards/market_item_card.dart';
 import 'package:yastik_alti/ui/ui_models/market_item_ui_model.dart';
 import 'package:yastik_alti/ui/widgets/market_item_details_sheet.dart';
-import 'package:yastik_alti/ui/utils/category_helper.dart'; // [EKLENDİ]
+import 'package:yastik_alti/ui/utils/category_helper.dart';
 
 class MarketScreen extends ConsumerStatefulWidget {
   const MarketScreen({super.key});
@@ -31,11 +31,10 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     final state = ref.watch(marketViewModelProvider);
     final viewModel = ref.read(marketViewModelProvider.notifier);
 
-    // [MERKEZİ STANDART]: Kategoriler dinamik olarak Helper'dan alınıyor
     final categories = CategoryHelper.marketCategories;
 
     return DefaultTabController(
-      length: categories.length, // Dinamik sekme sayısı
+      length: categories.length,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -64,44 +63,49 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
                           viewModel.updateSearchQuery("");
                           FocusScope.of(context).unfocus();
                         },
-                      ) : null,
+                      )
+                          : null,
                       filled: true,
                       fillColor: AppColors.inputFill,
                       contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
                 TabBar(
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  indicatorColor: AppColors.textPrimary,
+                  indicatorColor: AppColors.brandBlue,
                   labelColor: AppColors.textPrimary,
                   unselectedLabelColor: AppColors.textMuted,
                   dividerColor: Colors.transparent,
-                  // [DİNAMİK SEKMELER]
                   tabs: categories.map((cat) => Tab(text: cat)).toList(),
                 ),
               ],
             ),
           ),
         ),
-        body: TabBarView(
-          // [DİNAMİK LİSTELEME]: 
-          children: categories.map((cat) {
-            // Junior Notu: String ile filtreleme yapmak tehlikelidir (typo riski).
-            // Önce String'i (örn: 'Kripto') güvenli bir Enum'a (AssetType.crypto) çeviriyoruz.
-            final assetType = CategoryHelper.toAssetType(cat);
+        body: Container(
+          margin: const EdgeInsets.only(top: AppDimens.p8),
+          decoration: BoxDecoration(
+            color: AppColors.brandBlue.withValues(alpha: 0.08), // Filling preserved
+            borderRadius: const BorderRadius.all(Radius.circular(24)),
+            border: Border.all(color: Colors.black, width: 1.0), // Black contour
+          ),
+          child: TabBarView(
+            children: categories.map((cat) {
+              final assetType = CategoryHelper.toAssetType(cat);
+              final filteredItems = state.allItems.where((item) {
+                if (assetType == null) return true;
+                return item.type == assetType;
+              }).toList();
 
-            final filteredItems = state.allItems.where((item) {
-              // Eğer assetType null ise 'Tümü' seçilmiştir, hepsini göster.
-              // Değilse, varlığın tipi bizim Enum'ımızla eşleşiyor mu bak.
-              if (assetType == null) return true;
-              return item.type == assetType;
-            }).toList();
-
-            return _buildFilteredList(state.isLoading, state.searchQuery, filteredItems);
-          }).toList(),
+              return _buildFilteredList(state.isLoading, state.searchQuery, filteredItems);
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -120,9 +124,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: AppDimens.p8, bottom: 80),
+      padding: const EdgeInsets.only(top: AppDimens.p16, bottom: 120),
       itemCount: items.length,
-      itemBuilder: (context, index) { 
+      itemBuilder: (context, index) {
         final item = items[index];
         return MarketItemCard(
           model: item,

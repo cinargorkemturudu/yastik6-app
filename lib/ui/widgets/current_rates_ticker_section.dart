@@ -1,3 +1,4 @@
+// current_rates_ticker_section.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/ui/states/live_price_provider.dart';
@@ -47,8 +48,23 @@ class CurrentRatesTickerSection extends ConsumerWidget {
       );
     }).toList(growable: false);
 
-    return RepaintBoundary(
-      child: CurrentRatesTicker(items: items),
+    // [DÜZELTİLDİ]: Segment 2 ayrımı için Ticker'ı sabit yükseklikli bir Container içine alıp, altına %50 opacity mavi border ekledik.
+    return Container(
+      height: 36.0,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.brandBlue.withValues(alpha: 0.5),
+            width: 1.0,
+          ),
+        ),
+      ),
+      alignment: Alignment.center,
+      child: RepaintBoundary(
+        child: CurrentRatesTicker(items: items),
+      ),
     );
   }
 }

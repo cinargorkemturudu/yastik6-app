@@ -7,7 +7,7 @@ class AppAlphas {
   static const double hover = 0.10;
   static const double bgLight = 0.12;
 
-  // Orta seviye arka planlar (LinearProgress arkaplanı, vurgular)
+  // Orta seviye arka planlar (LinearProgreass arkaplanı, vurgular)
   static const double bgMedium = 0.20;
   static const double borderLight = 0.30;
   static const double overlay = 0.40;

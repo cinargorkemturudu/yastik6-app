@@ -1,7 +1,8 @@
+// home_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:yastik_alti/domain/models/entities/asset.dart';
 import 'package:yastik_alti/ui/utils/asset_visual_mapper.dart';
 import 'package:yastik_alti/ui/states/live_price_provider.dart';
 import 'package:yastik_alti/domain/models/dtos/market_state.dart';
@@ -9,12 +10,14 @@ import 'package:yastik_alti/ui/theme/app_colors.dart';
 import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
+import 'package:yastik_alti/ui/widgets/current_rates_ticker_section.dart';
 
 class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const HomeAppBar({super.key});
 
+  // [DÜZELTİLDİ]: Ticker yüksekliği (36.0) AppBar boyutuna eklendi
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 36.0);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,19 +31,25 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
       elevation: 0,
       centerTitle: true,
       leading: IconButton(
-        icon: const Icon(Icons.menu, color: AppColors.textPrimary),
+        icon: const Icon(Icons.menu, color: AppColors.brandBlue),
         onPressed: () {
           Scaffold.of(context).openDrawer();
         },
       ),
-      title: Text(
-        "Yastık6 ™",
-        style: AppTextStyles.h2.copyWith(letterSpacing: -0.5),
+      title: SvgPicture.asset(
+        'assets/asset_1.svg', // Dosya isminin boşluksuz ve küçük harf olduğundan emin olun
+        width: 130.0,
+        fit: BoxFit.contain,
       ),
       actions: [
         _buildHealthIndicator(context, health, marketState),
         const SizedBox(width: AppDimens.p12),
       ],
+      // [EKLENDİ]: Ticker şeridi AppBar'ın bottom alanına sabitlendi
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(36.0),
+        child: CurrentRatesTickerSection(),
+      ),
     );
   }
 
@@ -82,17 +91,9 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
       builder: (ctx) {
         final timeFormat = DateFormat('HH:mm:ss');
 
-        final categoryUpdates = <AssetType, DateTime>{};
-        final staleCategories = <AssetType>{};
-
-        for (final asset in state.marketAssets) {
-          if (!categoryUpdates.containsKey(asset.type) || asset.asOf.isAfter(categoryUpdates[asset.type]!)) {
-            categoryUpdates[asset.type] = asset.asOf;
-          }
-          if (asset.isStale) {
-            staleCategories.add(asset.type);
-          }
-        }
+        // Grab pre-calculated data directly from the state
+        final categoryUpdates = state.categoryLastUpdates;
+        final staleCategories = state.staleCategories;
 
         String titleText;
         IconData titleIcon;
@@ -124,9 +125,11 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
             children: [
               Icon(titleIcon, color: titleColor),
               const SizedBox(width: AppDimens.p8),
-              Text(
-                titleText,
-                style: AppTextStyles.h3,
+              Expanded( // [EKLENDİ]: Metin taşmalarını önlemek için
+                child: Text(
+                  titleText,
+                  style: AppTextStyles.h3,
+                ),
               ),
             ],
           ),

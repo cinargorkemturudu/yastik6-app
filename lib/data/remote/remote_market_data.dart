@@ -32,6 +32,7 @@ class RemoteMarketData {
       );
 
       if (res.statusCode != 200) {
+        AppLog.debug('HAM API YANITI: ${res.body}', domain: 'NETWORK');
         AppLog.insight('api_error'); // [FIXED]
         AppLog.error('HTTP ${res.statusCode} from market API', domain: 'NETWORK');
 

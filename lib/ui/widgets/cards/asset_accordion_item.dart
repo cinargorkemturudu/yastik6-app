@@ -73,6 +73,8 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
 
     return AppOutlinedCard(
       padding: EdgeInsets.zero,
+      // Explicitly coloring just these cards brand blue
+      backgroundColor: AppColors.brandBlue.withValues(alpha: 0.08),
       child: Column(
         children: [
           // --- HEADER: 3 SÜTUNLU KONSOLİDE YAPI ---
@@ -84,12 +86,10 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Üst Kısım: Sembol/İsim ve Fiyat/Günlük Değişim
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // [DÜZELTİLDİ]: Sol tarafı tamamen Expanded içine aldık
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +97,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                             Text(
                               widget.model.displayTitle,
                               style: AppTextStyles.h2.copyWith(fontSize: 18, letterSpacing: 0.5),
-                              maxLines: 2, // 2 satırdan sonrasını keser
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: AppDimens.p2),
@@ -111,9 +111,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                           ],
                         ),
                       ),
-
-                      const SizedBox(width: AppDimens.p12), // Sağ sütunla araya nefes boşluğu
-
+                      const SizedBox(width: AppDimens.p12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
@@ -149,8 +147,6 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                   Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
                   const SizedBox(height: AppDimens.p12),
 
-                  // Alt Kısım: 3 Sütunlu İstatistikler 
-                  // [DÜZELTİLDİ]: Her bir istatistik sütunu Expanded ile sarıldı, sayılar büyüse bile taşamaz.
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -177,7 +173,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                           widget.model.pnlValueText,
                           widget.model.pnlColor,
                           subText: widget.model.pnlPercent,
-                          alignment: CrossAxisAlignment.end, // En sağdaki sütunu sağa dayıyoruz
+                          alignment: CrossAxisAlignment.end,
                         ),
                       ),
                     ],
@@ -244,6 +240,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                               transactions: chartTxs,
                               color: AppColors.getAssetColor(widget.model.assetId),
                               selectedRange: _selectedRange,
+                              avgCost: widget.model.averageBuyPrice,
                               onScrub: (point) {
                                 if (_hoveredPoint?.timestamp != point?.timestamp) {
                                   Future.microtask(() {
@@ -265,7 +262,6 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
     );
   }
 
-  // Özel alignment alacak şekilde güncellendi
   Widget _buildLabeledStat(String label, String value, Color valueColor, {String? subText, required CrossAxisAlignment alignment}) {
     return Column(
       crossAxisAlignment: alignment,
@@ -282,7 +278,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
         ),
         const SizedBox(height: AppDimens.p4),
         FittedBox(
-          fit: BoxFit.scaleDown, // Sayı çok devasa olursa fontu küçültür, yan sütuna taşmaz
+          fit: BoxFit.scaleDown,
           child: Text(
               value,
               style: AppTextStyles.bodyMedium.copyWith(

@@ -12,7 +12,7 @@ import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/utils/app_formatter.dart';
 import 'package:yastik_alti/ui/widgets/cards/app_outlined_card.dart';
 import 'package:yastik_alti/ui/widgets/inputs/app_amount_input_field.dart';
-import 'package:yastik_alti/ui/states/portfolio_provider.dart'; // [EKLENDİ] FIFO bariyeri için[cite: 1]
+import 'package:yastik_alti/ui/states/portfolio_provider.dart';
 
 import '../../../domain/models/entities/asset.dart';
 
@@ -57,9 +57,8 @@ class _AssetFormStepState extends ConsumerState<AssetFormStep> {
   Widget build(BuildContext context) {
     final state = ref.watch(addAssetControllerProvider);
     final controller = ref.read(addAssetControllerProvider.notifier);
-    final portfolio = ref.watch(portfolioProvider); // [EKLENDİ] Bariyer hesabı için[cite: 1]
+    final portfolio = ref.watch(portfolioProvider);
 
-    // [YENİ]: Tarih değiştiğinde kontrolcüden gelen yeni fiyatı UI'a yansıt
     ref.listen(addAssetControllerProvider, (prev, next) {
       if (prev?.price != next.price) {
         final precision = widget.quote.type == AssetType.crypto ? 4 : 2;
@@ -69,7 +68,6 @@ class _AssetFormStepState extends ConsumerState<AssetFormStep> {
       }
     });
 
-    // [MANTIK]: Varlığa ait en son işlem tarihini bul (FIFO Bariyeri)
     final assetTxs = portfolio.transactions.where((t) => t.assetId == widget.quote.assetCode).toList();
     DateTime lastBarrierDate = DateTime(2000);
     if (assetTxs.isNotEmpty) {
@@ -109,9 +107,8 @@ class _AssetFormStepState extends ConsumerState<AssetFormStep> {
             FocusScope.of(context).unfocus();
             final picked = await showDatePicker(
               context: context,
-              // [DÜZELTİLDİ]: Başlangıç tarihi bariyerden geri olamaz
               initialDate: state.date.isBefore(lastBarrierDate) ? lastBarrierDate : state.date,
-              firstDate: lastBarrierDate, // [BARİYER]: Önceki lotun gerisine gidilemez[cite: 2]
+              firstDate: lastBarrierDate,
               lastDate: DateTime.now(),
             );
             if (picked != null) controller.updateDate(picked);
@@ -155,7 +152,7 @@ class _AssetFormStepState extends ConsumerState<AssetFormStep> {
           }
               : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isBuy ? AppColors.profitAccent : AppColors.lossAccent,
+            backgroundColor: AppColors.brandBlue,
             disabledBackgroundColor: AppColors.surface,
             padding: const EdgeInsets.symmetric(vertical: AppDimens.p16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd)),

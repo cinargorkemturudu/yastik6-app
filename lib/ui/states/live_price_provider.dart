@@ -30,7 +30,7 @@ class LivePriceNotifier extends AsyncNotifier<MarketState> {
     }
 
     // 2. ARKAPLANDA CANLI VERİ DÖNGÜSÜNÜ BAŞLAT
-    _timer ??= Timer.periodic(const Duration(seconds: 20), (_) => _refresh());
+    _timer ??= Timer.periodic(const Duration(seconds: 10), (_) => _refresh());
 
     // 3. İLK AĞ İSTEĞİNİ YAP
     return _fetchData();
