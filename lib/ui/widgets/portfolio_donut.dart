@@ -34,51 +34,52 @@ class PortfolioDonut extends StatelessWidget {
     final bool isEmpty = currentData.totalTl <= Decimal.zero;
 
     return RepaintBoundary(
-      child: SizedBox(
-        height: AppDimens.donutSectionHeight,
-        child: Row(
-          children: [
-            SizedBox(
-              width: AppDimens.donutSize,
-              child: Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CustomPaint(
-                      size: const Size.square(AppDimens.donutSize),
-                      painter: _PortfolioDonutPainter(currentData, isEmpty),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _TransactionButton(
-                          icon: Icons.remove,
-                          color: AppColors.lossAccent,
-                          onTap: () => onTransaction(TransactionType.sell, currentFilter),
-                        ),
-                        const SizedBox(width: AppDimens.p12),
-                        _TransactionButton(
-                          icon: Icons.add,
-                          color: AppColors.profitAccent,
-                          onTap: () => onTransaction(TransactionType.buy, currentFilter),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: AppDimens.donutSize,
+            height: AppDimens.donutSize,
+            child: Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: const Size.square(AppDimens.donutSize),
+                    painter: _PortfolioDonutPainter(currentData, isEmpty),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _TransactionButton(
+                        icon: Icons.remove,
+                        color: AppColors.brandBlue,
+                        onTap: () => onTransaction(TransactionType.sell, currentFilter),
+                      ),
+                      const SizedBox(width: AppDimens.p12),
+                      _TransactionButton(
+                        icon: Icons.add,
+                        color: AppColors.brandBlue,
+                        onTap: () => onTransaction(TransactionType.buy, currentFilter),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            if (!isEmpty || currentData.items.isNotEmpty) ...[
-              const SizedBox(width: AppDimens.p12),
-              Expanded(
+          ),
+          if (!isEmpty || currentData.items.isNotEmpty) ...[
+            const SizedBox(width: AppDimens.p12),
+            Expanded(
+              child: SingleChildScrollView(
                 child: _Legend(
                   items: currentData.items,
                   onTap: onLegendTap,
                 ),
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -95,7 +96,6 @@ class _Legend extends StatelessWidget {
     final sortedItems = List<PortfolioDonutItem>.from(items)
       ..sort((a, b) => b.tlValue.compareTo(a.tlValue));
 
-    // [GÜNCELLENDİ] Ekranda artık 3 yerine 4 öğe gösteriliyor
     final displayItems = sortedItems.take(4).toList();
     final hasMore = sortedItems.length > 4;
 
@@ -105,6 +105,7 @@ class _Legend extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppDimens.p4, horizontal: AppDimens.p4),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -119,10 +120,53 @@ class _Legend extends StatelessWidget {
     );
   }
 
+  // --- DİNAMİK METİN DENGELEME MANTIĞI ---
+  Widget _buildAdaptiveTextColumn(String title, String pnlText, Color pnlColor) {
+    // Hangisi daha uzun karakter olarak kontrol ediyoruz
+    final bool isTitleLonger = title.length > pnlText.length;
+
+    // Başlık Widget'ı
+    Widget titleWidget = Text(
+      title,
+      maxLines: isTitleLonger ? 2 : 1, // Uzunsa 2 satır izin ver, kısaysa 1 satırda kalsın
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, fontSize: 12, height: 1.1),
+    );
+    if (!isTitleLonger) {
+      // Eğer isim kısaysa onu FittedBox içine alıyoruz
+      titleWidget = FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: titleWidget);
+    }
+
+    // PnL Widget'ı
+    Widget pnlWidget = Text(
+      pnlText,
+      maxLines: isTitleLonger ? 1 : 2, // Uzunsa 2 satır izin ver, kısaysa 1 satırda kalsın
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyles.captionBold.copyWith(color: pnlColor, fontSize: 10, height: 1.1),
+    );
+    if (isTitleLonger) {
+      // Eğer PnL kısaysa onu FittedBox içine alıyoruz
+      pnlWidget = FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: pnlWidget);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        titleWidget,
+        const SizedBox(height: 2),
+        pnlWidget,
+      ],
+    );
+  }
+
   Widget _buildLegendItem(PortfolioDonutItem i) {
+    final title = AppFormatter.cleanAssetCode(i.title);
+    final pnlText = "${AppFormatter.pnlValue(i.pnlTl)} (${AppFormatter.percent(i.pnlPct)})";
+
     return Padding(
-      // [GÜNCELLENDİ] 4 öğenin sığması için dikey boşluklar sıkıştırıldı (bottom overflow önlendi)
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -132,26 +176,9 @@ class _Legend extends StatelessWidget {
               decoration: BoxDecoration(color: i.color, shape: BoxShape.circle)
           ),
           const SizedBox(width: AppDimens.p8),
+
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  AppFormatter.cleanAssetCode(i.title),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, fontSize: 12, height: 1.0),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  "${AppFormatter.pnlValue(i.pnlTl)} (${AppFormatter.percent(i.pnlPct)})",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.captionBold.copyWith(color: i.pnlTl.toPnlColor(), fontSize: 10),
-                ),
-              ],
-            ),
+            child: _buildAdaptiveTextColumn(title, pnlText, i.pnlTl.toPnlColor()),
           ),
           const SizedBox(width: AppDimens.p4),
           Column(
@@ -160,7 +187,7 @@ class _Legend extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "${AppFormatter.amount(i.tlValue, "")} TL",
+                AppFormatter.compactMoney(i.tlValue),
                 style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, fontSize: 12),
               ),
               if (i.quantity > Decimal.zero)

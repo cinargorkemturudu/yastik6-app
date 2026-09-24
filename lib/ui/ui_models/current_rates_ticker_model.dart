@@ -28,7 +28,15 @@ class TickerItemUiModel {
     required this.isStale,
   });
 
-  bool get isPositive => changePercent >= 0;
+  // 1. NEUTRAL LOGIC: Matches the 0.005 rounding threshold from the formatter
+  bool get isNeutral => changePercent.abs() < 0.005;
+  bool get isPositive => changePercent >= 0.005;
+
+  // 2. ARROW INDICATOR: Returns directional arrows, or a dash for neutral
+  String get trendArrow {
+    if (isNeutral) return '▬';
+    return isPositive ? '▲' : '▼';
+  }
 
   // PRESENTATION LOGIC: Centralized naming for the Ticker
   String get displayTitle {
@@ -43,8 +51,14 @@ class TickerItemUiModel {
   String get formattedAsk => AppFormatter.amount(ask, assetCode);
   String get formattedBidAsk => 'Al $formattedBid / Sat $formattedAsk';
 
+  // 3. COMBINED FORMATTING: Appends the arrow to the percentage string
   String get formattedChangePercent {
-    return AppFormatter.signedPercent(changePercent / 100);
+    final percentStr = AppFormatter.signedPercent(changePercent / 100);
+    if (isNeutral) {
+      // Replaces the +0.00% or -0.00% with a clean neutral format
+      return '▬ %0,00';
+    }
+    return '$trendArrow $percentStr';
   }
 
   TickerItemUiModel copyWith({

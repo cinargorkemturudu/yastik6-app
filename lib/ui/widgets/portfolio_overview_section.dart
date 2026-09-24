@@ -14,7 +14,6 @@ import '../../domain/models/entities/transaction.dart';
 import '../states/live_price_provider.dart';
 import '../theme/app_text_style.dart';
 import '../utils/app_formatter.dart';
-import 'current_rates_ticker_section.dart';
 import 'edit_transaction/edit_transaction_sheet.dart';
 import 'portfolio_donut.dart';
 import 'package:yastik_alti/ui/widgets/recent_lots_section.dart';
@@ -53,7 +52,6 @@ class PortfolioOverviewSection extends ConsumerWidget {
 
     if (uiState.isRealizedMode) {
       final summary = portfolioData.realizedSummary;
-
       if (summary != null) {
         currentDonut = UniversalPortfolioMapper.toRealizedDonutModel(summary, filterType, assetNames);
         allLots = UniversalPortfolioMapper.toRealizedLotUiModels(summary: summary, assetNames: assetNames, assetFilter: filterType);
@@ -77,95 +75,98 @@ class PortfolioOverviewSection extends ConsumerWidget {
     final recentLots = allLots.take(5).toList();
 
     return SafeArea(
+      bottom: false, // [SİHİRLİ DOKUNUŞ]: Alt menünün arkasına akabilmesi için fiziksel engeli kaldırdık!
       child: Container(
         width: double.infinity,
-        height: MediaQuery.of(context).size.height,
         color: AppColors.background,
-        child: SingleChildScrollView(
-          // [GÜNCELLENDİ] Üst ve iç boşluklar sıkıştırılarak yukarıdaki ölü alan ortadan kaldırıldı
-          padding: const EdgeInsets.fromLTRB(AppDimens.pagePadding, 4, AppDimens.pagePadding, AppDimens.pagePadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CurrentRatesTickerSection(),
-              const SizedBox(height: 4),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- 1. SABİT ÜST BÖLÜM (Dashboard) ---
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppDimens.pagePadding, 8, AppDimens.pagePadding, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    AppStrings.titles.profitMode.toUpperCase(),
-                    style: AppTextStyles.captionBold.copyWith(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTextStyles.h2.copyWith(fontSize: 16),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            AppStrings.titles.profitMode.toUpperCase(),
+                            style: AppTextStyles.captionBold.copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5
+                            ),
+                          ),
+                          const SizedBox(width: AppDimens.p4),
+                          Transform.scale(
+                            scale: 0.65,
+                            child: Switch(
+                              value: uiState.isRealizedMode,
+                              onChanged: (_) => vmNotifier.toggleRealizedMode(),
+                              activeThumbColor: AppColors.brandBlue,
+                              trackColor: WidgetStateProperty.all(Colors.white.withValues(alpha: AppAlphas.hover)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      currentDonut.totalValueText,
+                      style: AppTextStyles.heroAmount.copyWith(fontSize: 30),
                     ),
                   ),
-                  const SizedBox(width: AppDimens.p4),
-                  Transform.scale(
-                    scale: 0.65,
-                    child: Switch(
-                      value: uiState.isRealizedMode,
-                      onChanged: (_) => vmNotifier.toggleRealizedMode(),
-                      activeThumbColor: AppColors.profitAccent,
-                      trackColor: WidgetStateProperty.all(Colors.white.withValues(alpha: AppAlphas.hover)),
+                  if (!uiState.isRealizedMode)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 2),
+                        Text(
+                          currentDonut.totalPnlText,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: currentDonut.pnlColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 2),
-
-              Text(
-                title,
-                style: AppTextStyles.h2.copyWith(fontSize: 16),
-              ),
-              const SizedBox(height: 4),
-
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  currentDonut.totalValueText,
-                  style: AppTextStyles.heroAmount.copyWith(fontSize: 30),
-                ),
-              ),
-
-              if (!uiState.isRealizedMode)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 2),
-                    Text(
-                      currentDonut.totalPnlText,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: currentDonut.pnlColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: AppDimens.donutSectionHeight,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: PortfolioDonut(
+                        data: currentDonut,
+                        onTransaction: onTransaction,
+                        onLegendTap: onLegendTap,
+                        currentFilter: filterType,
                       ),
                     ),
-                  ],
-                ),
-
-              const SizedBox(height: 8),
-
-              SizedBox(
-                height: AppDimens.donutSectionHeight,
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: PortfolioDonut(
-                    data: currentDonut,
-                    onTransaction: onTransaction,
-                    onLegendTap: onLegendTap,
-                    currentFilter: filterType,
                   ),
-                ),
+                  const SizedBox(height: 16),
+                ],
               ),
+            ),
 
-              const SizedBox(height: 16),
-
-              if (recentLots.isNotEmpty)
-                RecentLotsSection(
+            // --- 2. KAYDIRILABİLİR ALT BÖLÜM (İşlemler Kutusu) ---
+            // DİKKAT: Burada SingleChildScrollView yok, sadece Expanded var.
+            if (recentLots.isNotEmpty)
+              Expanded(
+                child: RecentLotsSection(
                   lots: recentLots,
                   onShowAll: () {
                     Navigator.push(
@@ -176,9 +177,8 @@ class PortfolioOverviewSection extends ConsumerWidget {
                   onDelete: (id) => _showDeleteConfirmDialog(context, vmNotifier, id),
                   onEdit: (id) => EditTransactionSheet.show(context, ref, transactionId: id),
                 ),
-              const SizedBox(height: AppDimens.p40),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -190,23 +190,14 @@ class PortfolioOverviewSection extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
         title: Text(AppStrings.messages.deleteWarningTitle, style: AppTextStyles.h3),
-        content: Text(
-            AppStrings.messages.deleteWarningBody,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)
-        ),
+        content: Text(AppStrings.messages.deleteWarningBody, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
         actions: [
           TextButton(
-            child: Text(
-                AppStrings.common.cancel.toUpperCase(),
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)
-            ),
+            child: Text(AppStrings.common.cancel.toUpperCase(), style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
             onPressed: () => Navigator.pop(ctx),
           ),
           TextButton(
-            child: Text(
-                AppStrings.common.delete.toUpperCase(),
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.lossAccent)
-            ),
+            child: Text(AppStrings.common.delete.toUpperCase(), style: AppTextStyles.bodyMedium.copyWith(color: AppColors.lossAccent)),
             onPressed: () {
               Navigator.pop(ctx);
               vmNotifier.deleteTransaction(id);

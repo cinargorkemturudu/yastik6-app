@@ -1,9 +1,10 @@
 import 'package:yastik_alti/domain/models/value_objects/price_quote.dart';
+import 'package:yastik_alti/domain/models/entities/asset.dart'; // Added for AssetType
 
 enum DataHealthStatus {
-  healthy,  // All assets are fresh
-  degraded, // Some assets are stale (partial outage)
-  offline   // All assets are stale, or network fetch completely failed
+  healthy,  // All categories are fresh (under 25% stale)
+  degraded, // At least one category has >= 25% stale assets
+  offline   // No data available or completely stale
 }
 
 class MarketState {
@@ -21,15 +22,54 @@ class MarketState {
     return const MarketState();
   }
 
+  // Grouped logic moved from the UI to the State
+  Map<AssetType, DateTime> get categoryLastUpdates {
+    final updates = <AssetType, DateTime>{};
+    for (final quote in marketAssets) {
+      if (!updates.containsKey(quote.type) || quote.asOf.isAfter(updates[quote.type]!)) {
+        updates[quote.type] = quote.asOf;
+      }
+    }
+    return updates;
+  }
+
+  // The new 25% Stale Rule per provider/category
+  Set<AssetType> get staleCategories {
+    final staleTypes = <AssetType>{};
+    final categoryCounts = <AssetType, int>{};
+    final staleCounts = <AssetType, int>{};
+
+    for (final quote in marketAssets) {
+      categoryCounts[quote.type] = (categoryCounts[quote.type] ?? 0) + 1;
+      if (quote.isStale) {
+        staleCounts[quote.type] = (staleCounts[quote.type] ?? 0) + 1;
+      }
+    }
+
+    for (final type in categoryCounts.keys) {
+      final total = categoryCounts[type]!;
+      final stale = staleCounts[type] ?? 0;
+
+      // If 25% or more of the assets in this category are stale, the category is stale
+      if ((stale / total) >= 0.25) {
+        staleTypes.add(type);
+      }
+    }
+    return staleTypes;
+  }
+
   DataHealthStatus get healthStatus {
     if (marketAssets.isEmpty) return DataHealthStatus.offline;
 
     final staleCount = marketAssets.where((q) => q.isStale).length;
-
-    if (staleCount == 0) return DataHealthStatus.healthy;
     if (staleCount == marketAssets.length) return DataHealthStatus.offline;
 
-    return DataHealthStatus.degraded;
+    // If any provider/category hit the 25% threshold, the system is degraded
+    if (staleCategories.isNotEmpty) {
+      return DataHealthStatus.degraded;
+    }
+
+    return DataHealthStatus.healthy;
   }
 
   MarketState copyWith({

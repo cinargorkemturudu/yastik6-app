@@ -46,6 +46,8 @@ class _LotCardState extends ConsumerState<LotCard> {
 
     return AppOutlinedCard(
       onTap: _toggle,
+      borderColor: Colors.black,
+      backgroundColor: AppColors.brandBlue.withValues(alpha: 0.08),
       child: Column(
         children: [
           _buildHeader(context, ref),
@@ -63,7 +65,8 @@ class _LotCardState extends ConsumerState<LotCard> {
 
   Widget _buildSellSlip() {
     return AppOutlinedCard(
-      borderColor: AppColors.lossAccent.withValues(alpha: AppAlphas.borderLight),
+      borderColor: Colors.black,
+      backgroundColor: AppColors.brandBlue.withValues(alpha: 0.08),
       child: Row(
         children: [
           const Icon(Icons.remove_circle_outline, color: AppColors.lossAccent, size: 16),
@@ -72,9 +75,17 @@ class _LotCardState extends ConsumerState<LotCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "${AppStrings.labels.sell.toUpperCase()} - ${widget.model.dateText}",
-                  style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 10),
+                Row(
+                  children: [
+                    Text(
+                      AppStrings.labels.sell.toUpperCase(),
+                      style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 10),
+                    ),
+                    Text(
+                      " - ${widget.model.dateText}",
+                      style: AppTextStyles.captionBold.copyWith(fontSize: 10),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -94,7 +105,7 @@ class _LotCardState extends ConsumerState<LotCard> {
               const SizedBox(height: 2),
               Text(
                 widget.model.buyPriceText,
-                style: AppTextStyles.caption.copyWith(fontSize: 10),
+                style: AppTextStyles.captionBold.copyWith(fontSize: 10),
               ),
             ],
           ),
@@ -123,13 +134,13 @@ class _LotCardState extends ConsumerState<LotCard> {
                   widget.model.note!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+                  style: AppTextStyles.captionBold.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
               ],
               Text(
                 widget.model.dateText,
-                style: AppTextStyles.caption.copyWith(fontSize: 10),
+                style: AppTextStyles.captionBold.copyWith(fontSize: 10),
               ),
             ],
           ),
@@ -150,7 +161,7 @@ class _LotCardState extends ConsumerState<LotCard> {
               const SizedBox(height: 2),
               Text(
                 widget.model.totalCostText,
-                style: AppTextStyles.caption.copyWith(fontSize: 11),
+                style: AppTextStyles.captionBold.copyWith(fontSize: 11),
               ),
             ],
           ),
@@ -167,7 +178,7 @@ class _LotCardState extends ConsumerState<LotCard> {
             const SizedBox(height: 2),
             Text(
               widget.model.profitPercent,
-              style: AppTextStyles.caption.copyWith(color: pnlColor, fontSize: 10),
+              style: AppTextStyles.captionBold.copyWith(color: pnlColor, fontSize: 10),
             ),
           ],
         ),
@@ -223,8 +234,14 @@ class _LotCardState extends ConsumerState<LotCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("${AppStrings.labels.buy}: ${widget.model.buyPriceText}", style: AppTextStyles.caption.copyWith(fontSize: 9)),
-                Text("${AppStrings.labels.avgCost} $generalAvgCostText", style: AppTextStyles.caption.copyWith(fontSize: 9)),
+                Text(
+                    "${AppStrings.labels.buy}: ${widget.model.buyPriceText}",
+                    style: AppTextStyles.captionBold.copyWith(fontSize: 9)
+                ),
+                Text(
+                    "${AppStrings.labels.avgCost} $generalAvgCostText",
+                    style: AppTextStyles.captionBold.copyWith(fontSize: 9)
+                ),
               ],
             ),
             const SizedBox(height: AppDimens.p4),
@@ -248,9 +265,12 @@ class _LotCardState extends ConsumerState<LotCard> {
               children: [
                 const Icon(Icons.subdirectory_arrow_right, color: AppColors.brandBlue, size: 12),
                 const SizedBox(width: AppDimens.p6),
-                Text(sale.date, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+                Text(sale.date, style: AppTextStyles.captionBold.copyWith(fontSize: 10)),
                 const Spacer(),
-                Text("-${sale.amount}", style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 11)),
+                Text(
+                    "-${sale.amount}",
+                    style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 11)
+                ),
                 const SizedBox(width: AppDimens.p8),
                 SizedBox(
                   width: 50,
@@ -274,13 +294,13 @@ class _LotCardState extends ConsumerState<LotCard> {
               TextButton.icon(
                 onPressed: widget.onEdit,
                 icon: const Icon(Icons.edit, size: 12, color: AppColors.brandBlue),
-                label: Text(AppStrings.common.edit.toUpperCase(), style: AppTextStyles.caption.copyWith(fontSize: 10)),
+                label: Text(AppStrings.common.edit.toUpperCase(), style: AppTextStyles.captionBold.copyWith(fontSize: 10)),
               ),
             if (widget.onDelete != null)
               TextButton.icon(
                 onPressed: widget.onDelete,
                 icon: const Icon(Icons.delete, size: 12, color: AppColors.brandBlue),
-                label: Text(AppStrings.common.delete.toUpperCase(), style: AppTextStyles.caption.copyWith(fontSize: 10)),
+                label: Text(AppStrings.common.delete.toUpperCase(), style: AppTextStyles.captionBold.copyWith(fontSize: 10)),
               ),
           ],
         )
@@ -297,7 +317,7 @@ class _LotCardState extends ConsumerState<LotCard> {
           Text(title, style: AppTextStyles.captionBold.copyWith(fontSize: 9)),
           const SizedBox(height: 2),
           Text(value, style: AppTextStyles.bodyLarge.copyWith(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
-          Text(subTitle, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+          Text(subTitle, style: AppTextStyles.captionBold.copyWith(fontSize: 10)),
         ],
       ),
     );

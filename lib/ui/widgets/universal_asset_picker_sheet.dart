@@ -42,10 +42,12 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
   late String _selectedCategory;
   final List<String> _categories = CategoryHelper.coreCategories;
 
+  // [YENİ]: Listenin en altında olup olmadığımızı takip eden state
+  bool _isAtBottom = false;
+
   @override
   void initState() {
     super.initState();
-    // [EKLENDİ]: İlk açılışta gelen Enum'ı okuyup sekmeyi ayarlıyoruz!
     if (widget.initialAssetType != null) {
       switch (widget.initialAssetType!) {
         case AssetType.metal:
@@ -81,9 +83,7 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
     final filteredAssets = sourceAssets.where((quote) {
       final searchMatches = quote.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           quote.assetCode.toLowerCase().contains(_searchQuery.toLowerCase());
-
       bool categoryMatches = CategoryHelper.matchesCategory(quote.type, _selectedCategory);
-
       return searchMatches && categoryMatches;
     }).toList();
 
@@ -93,6 +93,15 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
       minChildSize: 0.5,
       expand: false,
       builder: (context, scrollController) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (scrollController.hasClients && mounted) {
+            final isBottom = scrollController.position.extentAfter <= 0;
+            if (_isAtBottom != isBottom) {
+              setState(() => _isAtBottom = isBottom);
+            }
+          }
+        });
+        
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16),
           decoration: const BoxDecoration(
@@ -171,63 +180,96 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                     textAlign: TextAlign.center,
                   ),
                 )
-                    : ListView.builder(
-                  controller: scrollController,
-                  itemCount: filteredAssets.length,
-                  itemBuilder: (context, index) {
-                    final quote = filteredAssets[index];
-                    final isSellingFlow = widget.transactionType == TransactionType.sell;
-
-                    // --- MERKEZİ SUNUM MANTIĞI EKLENDİ ---
-                    final String cleanCode = AppFormatter.cleanAssetCode(quote.assetCode);
-                    final String cleanName = AppFormatter.cleanAssetName(quote.name);
-                    final String displayName = AssetVisualMapper.getName(cleanCode, cleanName);
-
-                    String displayTitle;
-                    String? displaySubtitle;
-
-                    switch (quote.type) {
-                      case AssetType.currency:
-                      case AssetType.stock:
-                        displayTitle = displayName;
-                        displaySubtitle = cleanCode;
-                        break;
-                      case AssetType.metal:
-                        displayTitle = displayName;
-                        displaySubtitle = null;
-                        break;
-                      default:
-                        displayTitle = cleanCode;
-                        displaySubtitle = displayName;
-                        break;
+                    : NotificationListener<ScrollNotification>(
+                  // [YENİ]: Scroll pozisyonunu dinleyip _isAtBottom state'ini güncelliyoruz
+                  onNotification: (ScrollNotification notification) {
+                    if (notification.metrics.axis == Axis.vertical) {
+                      // Eğer extentAfter 0 veya daha küçükse, listenin en altındayız demektir.
+                      final isBottom = notification.metrics.extentAfter <= 0;
+                      if (_isAtBottom != isBottom) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            setState(() => _isAtBottom = isBottom);
+                          }
+                        });
+                      }
                     }
-
-                    final displayPrice = AppFormatter.money(isSellingFlow ? quote.bid : quote.ask);
-                    final trailingSubtitle = isSellingFlow ? AppStrings.form.currentBuyRate : AppStrings.form.currentSellRate;
-
-                    return AppAssetListTile(
-                      margin: const EdgeInsets.only(bottom: AppDimens.p10),
-                      onTap: () {
-                        FocusScope.of(context).unfocus();
-                        Navigator.pop(context);
-                        widget.onSelected(quote);
-                      },
-                      leading: SizedBox(
-                        width: 36, height: 36,
-                        child: AssetVisualMapper.getAvatar(assetCode: quote.assetCode, type: quote.type),
-                      ),
-                      title: Text(displayTitle, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w700)),
-                      subtitle: displaySubtitle != null ? Text(displaySubtitle, style: AppTextStyles.caption) : null,
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(displayPrice, style: AppTextStyles.priceLarge.copyWith(fontWeight: FontWeight.w800)),
-                          Text(trailingSubtitle, style: AppTextStyles.caption.copyWith(fontSize: 10)),
-                        ],
-                      ),
-                    );
+                    return false; // DraggableScrollableSheet'in kendi fiziklerini engellememek için
                   },
+                  child: AnimatedContainer(
+                    // [YENİ]: Container yerine AnimatedContainer kullandık ki köşeler yumuşak geçiş yapsın
+                    duration: const Duration(milliseconds: 200),
+                    margin: EdgeInsets.zero,
+                    // [YENİ]: İçerideki listenin yuvarlak köşelerden taşmasını engeller
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: AppColors.brandBlue.withValues(alpha: 0.08),
+                      // [GÜNCELLENDİ]: Alt köşeler scroll durumuna göre dinamik hesaplanıyor
+                      borderRadius: BorderRadius.vertical(
+                        top: const Radius.circular(24),
+                        bottom: Radius.circular(_isAtBottom ? 24 : 0),
+                      ),
+                      border: Border.all(color: AppColors.brandBlue.withValues(alpha: 0.2), width: 1),
+                    ),
+                    child: ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.only(top: AppDimens.p8, bottom: AppDimens.p16),
+                      itemCount: filteredAssets.length,
+                      itemBuilder: (context, index) {
+                        final quote = filteredAssets[index];
+                        final isSellingFlow = widget.transactionType == TransactionType.sell;
+
+                        final String cleanCode = AppFormatter.cleanAssetCode(quote.assetCode);
+                        final String cleanName = AppFormatter.cleanAssetName(quote.name);
+                        final String displayName = AssetVisualMapper.getName(cleanCode, cleanName);
+
+                        String displayTitle;
+                        String? displaySubtitle;
+
+                        switch (quote.type) {
+                          case AssetType.currency:
+                          case AssetType.stock:
+                            displayTitle = displayName;
+                            displaySubtitle = cleanCode;
+                            break;
+                          case AssetType.metal:
+                            displayTitle = displayName;
+                            displaySubtitle = null;
+                            break;
+                          default:
+                            displayTitle = cleanCode;
+                            displaySubtitle = displayName;
+                            break;
+                        }
+
+                        final displayPrice = AppFormatter.money(isSellingFlow ? quote.bid : quote.ask);
+                        final trailingSubtitle = isSellingFlow ? AppStrings.form.currentBuyRate : AppStrings.form.currentSellRate;
+
+                        return AppAssetListTile(
+                          margin: const EdgeInsets.only(bottom: AppDimens.p10, left: AppDimens.p16, right: AppDimens.p16),
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            Navigator.pop(context);
+                            widget.onSelected(quote);
+                          },
+                          leading: SizedBox(
+                            width: 36, height: 36,
+                            child: AssetVisualMapper.getAvatar(assetCode: quote.assetCode, type: quote.type),
+                          ),
+                          title: Text(displayTitle, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w700)),
+                          subtitle: displaySubtitle != null ? Text(displaySubtitle, style: AppTextStyles.caption) : null,
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(displayPrice, style: AppTextStyles.priceLarge.copyWith(fontWeight: FontWeight.w800)),
+                              Text(trailingSubtitle, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ],

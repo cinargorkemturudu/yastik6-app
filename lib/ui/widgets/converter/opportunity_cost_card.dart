@@ -35,9 +35,9 @@ class OpportunityCostCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: AppColors.brandBlue.withValues(alpha: 0.08), // Brand Blue fill
         borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-        border: Border.all(color: AppColors.textPrimary.withValues(alpha: AppAlphas.hover)),
+        border: Border.all(color: Colors.black, width: 1.0), // Solid black contour
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppDimens.p16),

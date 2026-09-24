@@ -1,5 +1,7 @@
+
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // [EKLENDİ]: Riverpod gücü
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/ui/screens/portfolio_screen.dart';
 import 'package:yastik_alti/ui/screens/market_screen.dart';
 import 'package:yastik_alti/ui/screens/converter_screen.dart';
@@ -9,9 +11,8 @@ import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/ticker_settings_sheet.dart';
-import 'package:yastik_alti/ui/states/cloud_backup_controller.dart'; // [EKLENDİ]: Köprümüz
+import 'package:yastik_alti/ui/states/cloud_backup_controller.dart';
 
-// [DÜZELTİLDİ]: Sınıf artık Riverpod ConsumerStatefulWidget
 class RootScreen extends ConsumerStatefulWidget {
   const RootScreen({super.key});
 
@@ -21,8 +22,6 @@ class RootScreen extends ConsumerStatefulWidget {
 
 class _RootScreenState extends ConsumerState<RootScreen> {
   int _currentIndex = 0;
-  // [SİLİNDİ]: _isCloudLoading ve _connectedEmail artık burada değil, Controller'da!
-  // [SİLİNDİ]: O devasa _handleCloudAction metodu çöpe atıldı!
 
   final List<Widget> _screens = const [
     PortfolioScreen(),
@@ -43,11 +42,9 @@ class _RootScreenState extends ConsumerState<RootScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // [YENİ EKLENDİ]: Riverpod State ve Controller bağlantısı
     final cloudState = ref.watch(cloudBackupControllerProvider);
     final cloudNotifier = ref.read(cloudBackupControllerProvider.notifier);
 
-    // [YENİ EKLENDİ]: State değişimlerini gizlice dinleyip ekrana popup fırlatan yapı
     ref.listen(cloudBackupControllerProvider, (prev, next) {
       if (next.isLoading && !(prev?.isLoading ?? false)) {
         _showStatusMessage("Bulut işlemi başlatıldı, lütfen bekleyin...", AppColors.brandBlue);
@@ -59,6 +56,7 @@ class _RootScreenState extends ConsumerState<RootScreen> {
     });
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppColors.background,
       appBar: const HomeAppBar(),
       drawer: Drawer(
@@ -71,11 +69,9 @@ class _RootScreenState extends ConsumerState<RootScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16, vertical: AppDimens.p24),
                 child: Text(AppStrings.common.menu, style: AppTextStyles.h2),
               ),
-
               const Divider(height: AppDimens.dividerHeight, color: AppColors.surfaceLight),
-
               ListTile(
-                leading: const Icon(Icons.settings_input_component, color: AppColors.textPrimary),
+                leading: const Icon(Icons.settings_input_component, color: AppColors.brandBlue),
                 title: Text(AppStrings.titles.tickerCustomization, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                 onTap: () {
                   Navigator.pop(context);
@@ -87,30 +83,26 @@ class _RootScreenState extends ConsumerState<RootScreen> {
                   );
                 },
               ),
-
-              // --- YEDEKLE BUTONU ---
               ListTile(
-                enabled: !cloudState.isLoading, // [DÜZELTİLDİ]: UI kilitlemesini State yapıyor
+                enabled: !cloudState.isLoading,
                 leading: cloudState.isLoading
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.cloud_upload_outlined, color: AppColors.brandBlue),
                 title: Text("Yedekle", style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                 onTap: () {
-                  Navigator.pop(context); // Menüyü kapat
-                  cloudNotifier.backup(); // [DÜZELTİLDİ]: Motoru doğrudan Riverpod tetikliyor
+                  Navigator.pop(context);
+                  cloudNotifier.backup();
                 },
               ),
-
-              // --- GERİ YÜKLE BUTONU ---
               ListTile(
                 enabled: !cloudState.isLoading,
-                leading: const Icon(Icons.settings_backup_restore, color: AppColors.lossAccent),
+                leading: const Icon(Icons.settings_backup_restore, color: AppColors.brandBlue),
                 title: Text("Geri Yükle", style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                 onTap: () async {
                   Navigator.pop(context);
                   final confirm = await _showRestoreDialog();
                   if (confirm == true) {
-                    cloudNotifier.restore(); // [DÜZELTİLDİ]: Motoru doğrudan Riverpod tetikliyor
+                    cloudNotifier.restore();
                   }
                 },
               ),
@@ -119,28 +111,50 @@ class _RootScreenState extends ConsumerState<RootScreen> {
         ),
       ),
       body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        backgroundColor: AppColors.background,
-        indicatorColor: AppColors.surfaceLight,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.account_balance_wallet_outlined, color: AppColors.textSecondary),
-            selectedIcon: const Icon(Icons.account_balance_wallet, color: AppColors.brandBlue),
-            label: AppStrings.navigation.portfolio,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.background.withValues(alpha: 0.0),
+              AppColors.background.withValues(alpha: 0.7),
+              AppColors.background,
+            ],
+            stops: const [0.0, 0.5, 1.0],
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.show_chart_outlined, color: AppColors.textSecondary),
-            selectedIcon: const Icon(Icons.show_chart, color: AppColors.brandBlue),
-            label: AppStrings.navigation.market,
+        ),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0),
+            child: NavigationBar(
+              selectedIndex: _currentIndex,
+              // [SİHİRLİ DOKUNUŞ]: Mat siyahı engelleyen Material 3 katmanları tamamen sıfırlandı
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              indicatorColor: AppColors.surfaceLight.withValues(alpha: 0.5),
+              onDestinationSelected: (index) => setState(() => _currentIndex = index),
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.account_balance_wallet_outlined, color: AppColors.textSecondary),
+                  selectedIcon: const Icon(Icons.account_balance_wallet, color: AppColors.brandBlue),
+                  label: AppStrings.navigation.portfolio,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.show_chart_outlined, color: AppColors.textSecondary),
+                  selectedIcon: const Icon(Icons.show_chart, color: AppColors.brandBlue),
+                  label: AppStrings.navigation.market,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.currency_exchange_outlined, color: AppColors.textSecondary),
+                  selectedIcon: const Icon(Icons.currency_exchange, color: AppColors.brandBlue),
+                  label: AppStrings.navigation.converter,
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.currency_exchange_outlined, color: AppColors.textSecondary),
-            selectedIcon: const Icon(Icons.currency_exchange, color: AppColors.brandBlue),
-            label: AppStrings.navigation.converter,
-          ),
-        ],
+        ),
       ),
     );
   }
