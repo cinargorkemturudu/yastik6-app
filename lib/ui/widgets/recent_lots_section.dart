@@ -88,21 +88,28 @@ class _RecentLotsSectionState extends State<RecentLotsSection> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             decoration: BoxDecoration(
-              color: AppColors.brandBlue.withValues(alpha: 0.08),
+              color: AppColors.brandBlue.withValues(alpha: AppAlphas.tint),
               borderRadius: _isAtBottom
                   ? const BorderRadius.all(Radius.circular(24))
                   : const BorderRadius.vertical(top: Radius.circular(24)),
               border: Border(
                 top: BorderSide(
-                    color: AppColors.brandBlue.withValues(alpha: 0.2), width: 1),
+                  color: AppColors.brandBlue.withValues(alpha: 0.2),
+                  width: 1,
+                ),
                 left: BorderSide(
-                    color: AppColors.brandBlue.withValues(alpha: 0.2), width: 1),
+                  color: AppColors.brandBlue.withValues(alpha: 0.2),
+                  width: 1,
+                ),
                 right: BorderSide(
-                    color: AppColors.brandBlue.withValues(alpha: 0.2), width: 1),
+                  color: AppColors.brandBlue.withValues(alpha: 0.2),
+                  width: 1,
+                ),
                 // [DÜZELTİLDİ]: width 0.0 hatasını engellemek için her durumda 1.0'a sabitlendi.
                 bottom: BorderSide(
-                    color: AppColors.brandBlue.withValues(alpha: 0.2),
-                    width: 1.0),
+                  color: AppColors.brandBlue.withValues(alpha: 0.2),
+                  width: 1.0,
+                ),
               ),
             ),
           ),
@@ -122,11 +129,7 @@ class _RecentLotsSectionState extends State<RecentLotsSection> {
               return const LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white,
-                  Colors.white,
-                  Colors.transparent,
-                ],
+                colors: [Colors.white, Colors.white, Colors.transparent],
                 stops: [0.0, 0.70, 1.0],
               ).createShader(rect);
             },
@@ -152,7 +155,11 @@ class _RecentLotsSectionState extends State<RecentLotsSection> {
                         onTap: widget.onShowAll,
                         child: Row(
                           children: [
-                            const Icon(Icons.bolt, size: 14, color: AppColors.brandBlue),
+                            const Icon(
+                              Icons.bolt,
+                              size: 14,
+                              color: AppColors.brandBlue,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               AppStrings.common.showAll,
@@ -181,17 +188,26 @@ class _RecentLotsSectionState extends State<RecentLotsSection> {
                     child: ListView.separated(
                       controller: _scrollController,
                       // Listenin son elemanı tam görünmesi için bırakılan pay
-                      padding: EdgeInsets.fromLTRB(16, 0, 16, _navbarClearance + 16),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        0,
+                        16,
+                        _navbarClearance + 16,
+                      ),
                       // [DÜZELTİLDİ]: Liste kısa olsa bile kaydırma fiziği aktif kalır, donmayı önler.
-                      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
                       itemCount: widget.lots.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final lotModel = widget.lots[index];
                         return LotCard(
                           model: lotModel,
                           onEdit: () => widget.onEdit(lotModel.transactionId),
-                          onDelete: () => widget.onDelete(lotModel.transactionId),
+                          onDelete: () =>
+                              widget.onDelete(lotModel.transactionId),
                         );
                       },
                     ),

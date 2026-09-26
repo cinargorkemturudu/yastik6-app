@@ -24,7 +24,8 @@ class CategoryDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<CategoryDetailScreen> createState() => _CategoryDetailScreenState();
+  ConsumerState<CategoryDetailScreen> createState() =>
+      _CategoryDetailScreenState();
 }
 
 class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
@@ -63,7 +64,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
 
     final assetNames = {
       if (marketState != null)
-        for (var quote in marketState.marketAssets) quote.assetCode: quote.name
+        for (var quote in marketState.marketAssets) quote.assetCode: quote.name,
     };
 
     if (portfolioData.isLoading && portfolioData.snapshot.positions.isEmpty) {
@@ -80,8 +81,14 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       return p.assetType == widget.categoryType;
     }).toList();
 
-    final Decimal totalValue = positions.fold(Decimal.zero, (sum, p) => sum + p.currentValue);
-    final Decimal totalProfit = positions.fold(Decimal.zero, (sum, p) => sum + p.profit);
+    final Decimal totalValue = positions.fold(
+      Decimal.zero,
+      (sum, p) => sum + p.currentValue,
+    );
+    final Decimal totalProfit = positions.fold(
+      Decimal.zero,
+      (sum, p) => sum + p.profit,
+    );
 
     final items = positions.map((p) {
       final rawName = assetNames[p.asset.symbol] ?? p.asset.name;
@@ -99,7 +106,10 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
           break;
         default:
           dTitle = AppFormatter.cleanAssetCode(p.asset.symbol);
-          dSubtitle = rawName.replaceAll(' USD', '').replaceAll('(USD)', '').trim();
+          dSubtitle = rawName
+              .replaceAll(' USD', '')
+              .replaceAll('(USD)', '')
+              .trim();
           break;
       }
 
@@ -126,10 +136,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         centerTitle: true,
-        title: Text(
-          widget.categoryName.toUpperCase(),
-          style: AppTextStyles.h3,
-        ),
+        title: Text(widget.categoryName.toUpperCase(), style: AppTextStyles.h3),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
@@ -144,9 +151,14 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(AppDimens.p24),
               decoration: BoxDecoration(
-                color: AppColors.brandBlue.withValues(alpha: 0.08), // Filled with brand blue
+                color: AppColors.brandBlue.withValues(
+                  alpha: AppAlphas.tint,
+                ), // Filled with brand blue
                 borderRadius: const BorderRadius.all(Radius.circular(24)),
-                border: Border.all(color: AppColors.brandBlue.withValues(alpha: 0.2), width: 1),
+                border: Border.all(
+                  color: AppColors.brandBlue.withValues(alpha: 0.2),
+                  width: 1,
+                ),
               ),
               child: Column(
                 children: [
@@ -174,7 +186,12 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
           // --- BODY: VARLIK LİSTESİ ---
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppDimens.p16, 0, AppDimens.p16, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppDimens.p16,
+                0,
+                AppDimens.p16,
+                0,
+              ),
               child: Stack(
                 clipBehavior: Clip.hardEdge,
                 children: [
@@ -184,14 +201,18 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                     top: 0,
                     left: 0,
                     right: 0,
-                    bottom: _isAtBottom ? _navbarClearance : -1.0, // Off-screen clip fix
+                    bottom: _isAtBottom
+                        ? _navbarClearance
+                        : -1.0, // Off-screen clip fix
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
                       decoration: BoxDecoration(
                         color: Colors.transparent, // Hollow
                         borderRadius: _isAtBottom
                             ? const BorderRadius.all(Radius.circular(24))
-                            : const BorderRadius.vertical(top: Radius.circular(24)),
+                            : const BorderRadius.vertical(
+                                top: Radius.circular(24),
+                              ),
                         border: Border.all(
                           color: AppColors.brandBlue.withValues(alpha: 0.2),
                           width: 1.0,
@@ -207,7 +228,11 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                           padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                           child: Row(
                             children: [
-                              const Icon(Icons.bolt, size: 14, color: AppColors.brandBlue),
+                              const Icon(
+                                Icons.bolt,
+                                size: 14,
+                                color: AppColors.brandBlue,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 "VARLIK LİSTESİ",
@@ -226,10 +251,18 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                             },
                             child: ListView.separated(
                               controller: _scrollController,
-                              padding: EdgeInsets.fromLTRB(16, 0, 16, _navbarClearance + 16),
-                              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                              padding: EdgeInsets.fromLTRB(
+                                16,
+                                0,
+                                16,
+                                _navbarClearance + 16,
+                              ),
+                              physics: const BouncingScrollPhysics(
+                                parent: AlwaysScrollableScrollPhysics(),
+                              ),
                               itemCount: items.length,
-                              separatorBuilder: (context, index) => const SizedBox(height: 8),
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 8),
                               itemBuilder: (context, index) {
                                 return AssetAccordionItem(model: items[index]);
                               },

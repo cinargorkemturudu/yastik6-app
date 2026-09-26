@@ -2,20 +2,24 @@ import 'package:yastik_alti/domain/models/value_objects/price_quote.dart';
 import 'package:yastik_alti/domain/models/entities/asset.dart'; // Added for AssetType
 
 enum DataHealthStatus {
-  healthy,  // All categories are fresh (under 25% stale)
+  healthy, // All categories are fresh (under 25% stale)
   degraded, // At least one category has >= 25% stale assets
-  offline   // No data available or completely stale
+  offline, // No data available or completely stale
 }
 
 class MarketState {
   final List<PriceQuote> marketAssets;
   final Map<String, PriceQuote> priceMap;
   final DateTime? lastUpdate;
+  final DateTime? lastAttempt;
+  final int consecutiveFailures;
 
   const MarketState({
     this.marketAssets = const [],
     this.priceMap = const {},
     this.lastUpdate,
+    this.lastAttempt,
+    this.consecutiveFailures = 0,
   });
 
   factory MarketState.initial() {
@@ -26,7 +30,8 @@ class MarketState {
   Map<AssetType, DateTime> get categoryLastUpdates {
     final updates = <AssetType, DateTime>{};
     for (final quote in marketAssets) {
-      if (!updates.containsKey(quote.type) || quote.asOf.isAfter(updates[quote.type]!)) {
+      if (!updates.containsKey(quote.type) ||
+          quote.asOf.isAfter(updates[quote.type]!)) {
         updates[quote.type] = quote.asOf;
       }
     }
@@ -76,11 +81,15 @@ class MarketState {
     List<PriceQuote>? marketAssets,
     Map<String, PriceQuote>? priceMap,
     DateTime? lastUpdate,
+    DateTime? lastAttempt,
+    int? consecutiveFailures,
   }) {
     return MarketState(
       marketAssets: marketAssets ?? this.marketAssets,
       priceMap: priceMap ?? this.priceMap,
       lastUpdate: lastUpdate ?? this.lastUpdate,
+      lastAttempt: lastAttempt ?? this.lastAttempt,
+      consecutiveFailures: consecutiveFailures ?? this.consecutiveFailures,
     );
   }
 }
