@@ -53,7 +53,11 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _buildHealthIndicator(BuildContext context, DataHealthStatus health, MarketState state) {
+  Widget _buildHealthIndicator(
+    BuildContext context,
+    DataHealthStatus health,
+    MarketState state,
+  ) {
     IconData icon;
     Color color;
 
@@ -64,7 +68,7 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
         break;
       case DataHealthStatus.degraded:
         icon = Icons.warning_amber_rounded;
-        color = Colors.orangeAccent;
+        color = AppColors.warning;
         break;
       case DataHealthStatus.offline:
         icon = Icons.cloud_off_rounded;
@@ -85,7 +89,11 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  void _showDiagnosticDialog(BuildContext context, DataHealthStatus health, MarketState state) {
+  void _showDiagnosticDialog(
+    BuildContext context,
+    DataHealthStatus health,
+    MarketState state,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -113,9 +121,11 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
         } else {
           titleText = AppStrings.titles.delayedData;
           titleIcon = Icons.warning_amber_rounded;
-          titleColor = Colors.orangeAccent;
+          titleColor = AppColors.warning;
 
-          final staleNames = staleCategories.map((t) => AssetVisualMapper.categoryNameOf(t)).join(', ');
+          final staleNames = staleCategories
+              .map((t) => AssetVisualMapper.categoryNameOf(t))
+              .join(', ');
           bodyText = "${AppStrings.messages.degradedBodyPrefix}$staleNames";
         }
 
@@ -125,11 +135,9 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
             children: [
               Icon(titleIcon, color: titleColor),
               const SizedBox(width: AppDimens.p8),
-              Expanded( // [EKLENDİ]: Metin taşmalarını önlemek için
-                child: Text(
-                  titleText,
-                  style: AppTextStyles.h3,
-                ),
+              Expanded(
+                // [EKLENDİ]: Metin taşmalarını önlemek için
+                child: Text(titleText, style: AppTextStyles.h3),
               ),
             ],
           ),
@@ -137,10 +145,24 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                bodyText,
-                style: AppTextStyles.captionBold,
-              ),
+              Text(bodyText, style: AppTextStyles.captionBold),
+
+              if (state.consecutiveFailures > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppDimens.p8),
+                  child: Text(
+                    AppStrings.messages.lastSuccessfulSyncWith(
+                      state.lastUpdate != null
+                          ? timeFormat.format(state.lastUpdate!.toLocal())
+                          : AppStrings.common.notAvailable,
+                      state.consecutiveFailures,
+                    ),
+                    style: AppTextStyles.captionBold.copyWith(
+                      color: AppColors.warning,
+                    ),
+                  ),
+                ),
+
               const SizedBox(height: AppDimens.p16),
 
               if (categoryUpdates.isNotEmpty)
@@ -148,10 +170,15 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   children: categoryUpdates.entries.map((entry) {
                     final isCategoryStale = staleCategories.contains(entry.key);
 
-                    final rowColor = isCategoryStale ? Colors.orangeAccent : AppColors.textPrimary;
+                    final rowColor = isCategoryStale
+                        ? AppColors.warning
+                        : AppColors.textPrimary;
 
                     final rowStyle = isCategoryStale
-                        ? AppTextStyles.bodyMedium.copyWith(color: rowColor, fontWeight: FontWeight.w700)
+                        ? AppTextStyles.bodyMedium.copyWith(
+                            color: rowColor,
+                            fontWeight: FontWeight.w700,
+                          )
                         : AppTextStyles.bodyMedium;
 
                     final timeStyle = isCategoryStale
@@ -181,7 +208,12 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(AppStrings.common.ok.toUpperCase(), style: AppTextStyles.bodyMedium.copyWith(color: AppColors.brandBlue)),
+              child: Text(
+                AppStrings.common.ok.toUpperCase(),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.brandBlue,
+                ),
+              ),
             ),
           ],
         );

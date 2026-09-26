@@ -32,10 +32,12 @@ class UniversalAssetPickerSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<UniversalAssetPickerSheet> createState() => _UniversalAssetPickerSheetState();
+  ConsumerState<UniversalAssetPickerSheet> createState() =>
+      _UniversalAssetPickerSheetState();
 }
 
-class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPickerSheet> {
+class _UniversalAssetPickerSheetState
+    extends ConsumerState<UniversalAssetPickerSheet> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = "";
 
@@ -78,12 +80,19 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
 
   @override
   Widget build(BuildContext context) {
-    final sourceAssets = widget.customAssetList ?? ref.watch(livePriceProvider).valueOrNull?.marketAssets ?? [];
+    final sourceAssets =
+        widget.customAssetList ??
+        ref.watch(livePriceProvider).valueOrNull?.marketAssets ??
+        [];
 
     final filteredAssets = sourceAssets.where((quote) {
-      final searchMatches = quote.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final searchMatches =
+          quote.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           quote.assetCode.toLowerCase().contains(_searchQuery.toLowerCase());
-      bool categoryMatches = CategoryHelper.matchesCategory(quote.type, _selectedCategory);
+      bool categoryMatches = CategoryHelper.matchesCategory(
+        quote.type,
+        _selectedCategory,
+      );
       return searchMatches && categoryMatches;
     }).toList();
 
@@ -101,42 +110,70 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
             }
           }
         });
-        
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16),
           decoration: const BoxDecoration(
             color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLg)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppDimens.radiusLg),
+            ),
           ),
           child: Column(
             children: [
               const SizedBox(height: AppDimens.p12),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.textMuted.withValues(alpha: AppAlphas.borderLight), borderRadius: BorderRadius.circular(AppDimens.radiusXs))),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textMuted.withValues(
+                    alpha: AppAlphas.borderLight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppDimens.radiusXs),
+                ),
+              ),
               const SizedBox(height: AppDimens.p16),
               Text(widget.title, style: AppTextStyles.h3),
               const SizedBox(height: AppDimens.p16),
 
               TextField(
                 controller: _searchCtrl,
-                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: InputDecoration(
                   hintText: AppStrings.form.searchAssetHint,
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.bold),
-                  prefixIcon: const Icon(Icons.search, color: AppColors.textMuted, size: 20),
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                    icon: const Icon(Icons.clear, color: AppColors.textMuted, size: 18),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      setState(() => _searchQuery = '');
-                      FocusScope.of(context).unfocus();
-                    },
-                  ) : null,
+                          icon: const Icon(
+                            Icons.clear,
+                            color: AppColors.textMuted,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _searchQuery = '');
+                            FocusScope.of(context).unfocus();
+                          },
+                        )
+                      : null,
                   filled: true,
                   fillColor: AppColors.surfaceLight,
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
               const SizedBox(height: AppDimens.p16),
@@ -156,14 +193,31 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
                       },
                       child: Container(
                         margin: const EdgeInsets.only(right: AppDimens.p8),
-                        padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimens.p16,
+                        ),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.brandBlue : AppColors.surface,
+                          color: isSelected
+                              ? AppColors.brandBlue
+                              : AppColors.surface,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isSelected ? AppColors.brandBlue : AppColors.textPrimary.withValues(alpha: AppAlphas.hover)),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.brandBlue
+                                : AppColors.textPrimary.withValues(
+                                    alpha: AppAlphas.hover,
+                                  ),
+                          ),
                         ),
-                        child: Text(cat, style: AppTextStyles.captionBold.copyWith(color: isSelected ? Colors.white : AppColors.textSecondary)),
+                        child: Text(
+                          cat,
+                          style: AppTextStyles.captionBold.copyWith(
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -174,103 +228,157 @@ class _UniversalAssetPickerSheetState extends ConsumerState<UniversalAssetPicker
               Expanded(
                 child: filteredAssets.isEmpty
                     ? Center(
-                  child: Text(
-                    _searchQuery.isEmpty ? (widget.customEmptyMessage ?? AppStrings.messages.emptyTicker) : AppStrings.messages.noResultsFor(_searchQuery),
-                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                )
+                        child: Text(
+                          _searchQuery.isEmpty
+                              ? (widget.customEmptyMessage ??
+                                    AppStrings.messages.emptyTicker)
+                              : AppStrings.messages.noResultsFor(_searchQuery),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
                     : NotificationListener<ScrollNotification>(
-                  // [YENİ]: Scroll pozisyonunu dinleyip _isAtBottom state'ini güncelliyoruz
-                  onNotification: (ScrollNotification notification) {
-                    if (notification.metrics.axis == Axis.vertical) {
-                      // Eğer extentAfter 0 veya daha küçükse, listenin en altındayız demektir.
-                      final isBottom = notification.metrics.extentAfter <= 0;
-                      if (_isAtBottom != isBottom) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            setState(() => _isAtBottom = isBottom);
+                        // [YENİ]: Scroll pozisyonunu dinleyip _isAtBottom state'ini güncelliyoruz
+                        onNotification: (ScrollNotification notification) {
+                          if (notification.metrics.axis == Axis.vertical) {
+                            // Eğer extentAfter 0 veya daha küçükse, listenin en altındayız demektir.
+                            final isBottom =
+                                notification.metrics.extentAfter <= 0;
+                            if (_isAtBottom != isBottom) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted) {
+                                  setState(() => _isAtBottom = isBottom);
+                                }
+                              });
+                            }
                           }
-                        });
-                      }
-                    }
-                    return false; // DraggableScrollableSheet'in kendi fiziklerini engellememek için
-                  },
-                  child: AnimatedContainer(
-                    // [YENİ]: Container yerine AnimatedContainer kullandık ki köşeler yumuşak geçiş yapsın
-                    duration: const Duration(milliseconds: 200),
-                    margin: EdgeInsets.zero,
-                    // [YENİ]: İçerideki listenin yuvarlak köşelerden taşmasını engeller
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      color: AppColors.brandBlue.withValues(alpha: 0.08),
-                      // [GÜNCELLENDİ]: Alt köşeler scroll durumuna göre dinamik hesaplanıyor
-                      borderRadius: BorderRadius.vertical(
-                        top: const Radius.circular(24),
-                        bottom: Radius.circular(_isAtBottom ? 24 : 0),
+                          return false; // DraggableScrollableSheet'in kendi fiziklerini engellememek için
+                        },
+                        child: AnimatedContainer(
+                          // [YENİ]: Container yerine AnimatedContainer kullandık ki köşeler yumuşak geçiş yapsın
+                          duration: const Duration(milliseconds: 200),
+                          margin: EdgeInsets.zero,
+                          // [YENİ]: İçerideki listenin yuvarlak köşelerden taşmasını engeller
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            color: AppColors.brandBlue.withValues(
+                              alpha: AppAlphas.tint,
+                            ),
+                            // [GÜNCELLENDİ]: Alt köşeler scroll durumuna göre dinamik hesaplanıyor
+                            borderRadius: BorderRadius.vertical(
+                              top: const Radius.circular(24),
+                              bottom: Radius.circular(_isAtBottom ? 24 : 0),
+                            ),
+                            border: Border.all(
+                              color: AppColors.brandBlue.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: ListView.builder(
+                            controller: scrollController,
+                            padding: const EdgeInsets.only(
+                              top: AppDimens.p8,
+                              bottom: AppDimens.p16,
+                            ),
+                            itemCount: filteredAssets.length,
+                            itemBuilder: (context, index) {
+                              final quote = filteredAssets[index];
+                              final isSellingFlow =
+                                  widget.transactionType ==
+                                  TransactionType.sell;
+
+                              final String cleanCode =
+                                  AppFormatter.cleanAssetCode(quote.assetCode);
+                              final String cleanName =
+                                  AppFormatter.cleanAssetName(quote.name);
+                              final String displayName =
+                                  AssetVisualMapper.getName(
+                                    cleanCode,
+                                    cleanName,
+                                  );
+
+                              String displayTitle;
+                              String? displaySubtitle;
+
+                              switch (quote.type) {
+                                case AssetType.currency:
+                                case AssetType.stock:
+                                  displayTitle = displayName;
+                                  displaySubtitle = cleanCode;
+                                  break;
+                                case AssetType.metal:
+                                  displayTitle = displayName;
+                                  displaySubtitle = null;
+                                  break;
+                                default:
+                                  displayTitle = cleanCode;
+                                  displaySubtitle = displayName;
+                                  break;
+                              }
+
+                              final displayPrice = AppFormatter.money(
+                                isSellingFlow ? quote.bid : quote.ask,
+                              );
+                              final trailingSubtitle = isSellingFlow
+                                  ? AppStrings.form.currentBuyRate
+                                  : AppStrings.form.currentSellRate;
+
+                              return AppAssetListTile(
+                                margin: const EdgeInsets.only(
+                                  bottom: AppDimens.p10,
+                                  left: AppDimens.p16,
+                                  right: AppDimens.p16,
+                                ),
+                                onTap: () {
+                                  FocusScope.of(context).unfocus();
+                                  Navigator.pop(context);
+                                  widget.onSelected(quote);
+                                },
+                                leading: SizedBox(
+                                  width: 36,
+                                  height: 36,
+                                  child: AssetVisualMapper.getAvatar(
+                                    assetCode: quote.assetCode,
+                                    type: quote.type,
+                                  ),
+                                ),
+                                title: Text(
+                                  displayTitle,
+                                  style: AppTextStyles.bodyLarge.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                subtitle: displaySubtitle != null
+                                    ? Text(
+                                        displaySubtitle,
+                                        style: AppTextStyles.caption,
+                                      )
+                                    : null,
+                                trailing: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      displayPrice,
+                                      style: AppTextStyles.priceLarge.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    Text(
+                                      trailingSubtitle,
+                                      style: AppTextStyles.caption.copyWith(
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                      border: Border.all(color: AppColors.brandBlue.withValues(alpha: 0.2), width: 1),
-                    ),
-                    child: ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.only(top: AppDimens.p8, bottom: AppDimens.p16),
-                      itemCount: filteredAssets.length,
-                      itemBuilder: (context, index) {
-                        final quote = filteredAssets[index];
-                        final isSellingFlow = widget.transactionType == TransactionType.sell;
-
-                        final String cleanCode = AppFormatter.cleanAssetCode(quote.assetCode);
-                        final String cleanName = AppFormatter.cleanAssetName(quote.name);
-                        final String displayName = AssetVisualMapper.getName(cleanCode, cleanName);
-
-                        String displayTitle;
-                        String? displaySubtitle;
-
-                        switch (quote.type) {
-                          case AssetType.currency:
-                          case AssetType.stock:
-                            displayTitle = displayName;
-                            displaySubtitle = cleanCode;
-                            break;
-                          case AssetType.metal:
-                            displayTitle = displayName;
-                            displaySubtitle = null;
-                            break;
-                          default:
-                            displayTitle = cleanCode;
-                            displaySubtitle = displayName;
-                            break;
-                        }
-
-                        final displayPrice = AppFormatter.money(isSellingFlow ? quote.bid : quote.ask);
-                        final trailingSubtitle = isSellingFlow ? AppStrings.form.currentBuyRate : AppStrings.form.currentSellRate;
-
-                        return AppAssetListTile(
-                          margin: const EdgeInsets.only(bottom: AppDimens.p10, left: AppDimens.p16, right: AppDimens.p16),
-                          onTap: () {
-                            FocusScope.of(context).unfocus();
-                            Navigator.pop(context);
-                            widget.onSelected(quote);
-                          },
-                          leading: SizedBox(
-                            width: 36, height: 36,
-                            child: AssetVisualMapper.getAvatar(assetCode: quote.assetCode, type: quote.type),
-                          ),
-                          title: Text(displayTitle, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w700)),
-                          subtitle: displaySubtitle != null ? Text(displaySubtitle, style: AppTextStyles.caption) : null,
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(displayPrice, style: AppTextStyles.priceLarge.copyWith(fontWeight: FontWeight.w800)),
-                              Text(trailingSubtitle, style: AppTextStyles.caption.copyWith(fontSize: 10)),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
               ),
             ],
           ),

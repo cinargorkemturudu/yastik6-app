@@ -15,6 +15,7 @@ import '../states/live_price_provider.dart';
 import '../theme/app_text_style.dart';
 import '../utils/app_formatter.dart';
 import 'edit_transaction/edit_transaction_sheet.dart';
+import 'cards/app_outlined_card.dart';
 import 'portfolio_donut.dart';
 import 'package:yastik_alti/ui/widgets/recent_lots_section.dart';
 import 'package:yastik_alti/ui/screens/history_screen.dart';
@@ -53,38 +54,95 @@ class PortfolioOverviewSection extends ConsumerWidget {
     if (uiState.isRealizedMode) {
       final summary = portfolioData.realizedSummary;
       if (summary != null) {
-        currentDonut = UniversalPortfolioMapper.toRealizedDonutModel(summary, filterType, assetNames);
-        allLots = UniversalPortfolioMapper.toRealizedLotUiModels(summary: summary, assetNames: assetNames, assetFilter: filterType);
+        currentDonut = UniversalPortfolioMapper.toRealizedDonutModel(
+          summary,
+          filterType,
+          assetNames,
+        );
+        allLots = UniversalPortfolioMapper.toRealizedLotUiModels(
+          summary: summary,
+          assetNames: assetNames,
+          assetFilter: filterType,
+        );
       } else {
         currentDonut = PortfolioDonutModel(
-            totalTl: Decimal.zero,
-            totalPnlTl: Decimal.zero,
-            totalPnlPct: 0,
-            totalValueText: AppFormatter.money(Decimal.zero),
-            totalPnlText: "${AppFormatter.pnlValue(Decimal.zero)} (${AppFormatter.signedPercent(0)})",
-            pnlColor: AppColors.textPrimary,
-            items: []
+          totalTl: Decimal.zero,
+          totalPnlTl: Decimal.zero,
+          totalPnlPct: 0,
+          totalValueText: AppFormatter.money(Decimal.zero),
+          totalPnlText:
+              "${AppFormatter.pnlValue(Decimal.zero)} (${AppFormatter.signedPercent(0)})",
+          pnlColor: AppColors.textPrimary,
+          items: [],
         );
         allLots = [];
       }
     } else {
-      currentDonut = UniversalPortfolioMapper.toDonutModel(portfolioData.snapshot, filterType, assetNames);
-      allLots = UniversalPortfolioMapper.toLotUiModels(positions: portfolioData.snapshot.positions, allocationsMap: portfolioData.allocationsMap, assetNames: assetNames, assetFilter: filterType);
+      currentDonut = UniversalPortfolioMapper.toDonutModel(
+        portfolioData.snapshot,
+        filterType,
+        assetNames,
+      );
+      allLots = UniversalPortfolioMapper.toLotUiModels(
+        positions: portfolioData.snapshot.positions,
+        allocationsMap: portfolioData.allocationsMap,
+        assetNames: assetNames,
+        assetFilter: filterType,
+      );
     }
 
     final recentLots = allLots.take(5).toList();
 
     return SafeArea(
-      bottom: false, // [SİHİRLİ DOKUNUŞ]: Alt menünün arkasına akabilmesi için fiziksel engeli kaldırdık!
+      bottom:
+          false, // [SİHİRLİ DOKUNUŞ]: Alt menünün arkasına akabilmesi için fiziksel engeli kaldırdık!
       child: Container(
         width: double.infinity,
         color: AppColors.background,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (portfolioData.errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimens.pagePadding,
+                  AppDimens.p8,
+                  AppDimens.pagePadding,
+                  0,
+                ),
+                child: AppOutlinedCard(
+                  borderColor: AppColors.lossAccent,
+                  backgroundColor: AppColors.lossAccent.withValues(
+                    alpha: AppAlphas.tint,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.lossAccent,
+                        size: AppDimens.iconMd,
+                      ),
+                      const SizedBox(width: AppDimens.p8),
+                      Expanded(
+                        child: Text(
+                          portfolioData.errorMessage!,
+                          style: AppTextStyles.captionBold.copyWith(
+                            color: AppColors.lossAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             // --- 1. SABİT ÜST BÖLÜM (Dashboard) ---
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppDimens.pagePadding, 8, AppDimens.pagePadding, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppDimens.pagePadding,
+                8,
+                AppDimens.pagePadding,
+                0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -101,9 +159,9 @@ class PortfolioOverviewSection extends ConsumerWidget {
                           Text(
                             AppStrings.titles.profitMode.toUpperCase(),
                             style: AppTextStyles.captionBold.copyWith(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(width: AppDimens.p4),
@@ -113,7 +171,9 @@ class PortfolioOverviewSection extends ConsumerWidget {
                               value: uiState.isRealizedMode,
                               onChanged: (_) => vmNotifier.toggleRealizedMode(),
                               activeThumbColor: AppColors.brandBlue,
-                              trackColor: WidgetStateProperty.all(Colors.white.withValues(alpha: AppAlphas.hover)),
+                              trackColor: WidgetStateProperty.all(
+                                Colors.white.withValues(alpha: AppAlphas.hover),
+                              ),
                             ),
                           ),
                         ],
@@ -174,8 +234,13 @@ class PortfolioOverviewSection extends ConsumerWidget {
                       MaterialPageRoute(builder: (_) => const HistoryScreen()),
                     );
                   },
-                  onDelete: (id) => _showDeleteConfirmDialog(context, vmNotifier, id),
-                  onEdit: (id) => EditTransactionSheet.show(context, ref, transactionId: id),
+                  onDelete: (id) =>
+                      _showDeleteConfirmDialog(context, vmNotifier, id),
+                  onEdit: (id) => EditTransactionSheet.show(
+                    context,
+                    ref,
+                    transactionId: id,
+                  ),
                 ),
               ),
           ],
@@ -184,20 +249,42 @@ class PortfolioOverviewSection extends ConsumerWidget {
     );
   }
 
-  void _showDeleteConfirmDialog(BuildContext context, HomeViewModel vmNotifier, String id) {
+  void _showDeleteConfirmDialog(
+    BuildContext context,
+    HomeViewModel vmNotifier,
+    String id,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
-        title: Text(AppStrings.messages.deleteWarningTitle, style: AppTextStyles.h3),
-        content: Text(AppStrings.messages.deleteWarningBody, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+        title: Text(
+          AppStrings.messages.deleteWarningTitle,
+          style: AppTextStyles.h3,
+        ),
+        content: Text(
+          AppStrings.messages.deleteWarningBody,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
         actions: [
           TextButton(
-            child: Text(AppStrings.common.cancel.toUpperCase(), style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
+            child: Text(
+              AppStrings.common.cancel.toUpperCase(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
             onPressed: () => Navigator.pop(ctx),
           ),
           TextButton(
-            child: Text(AppStrings.common.delete.toUpperCase(), style: AppTextStyles.bodyMedium.copyWith(color: AppColors.lossAccent)),
+            child: Text(
+              AppStrings.common.delete.toUpperCase(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.lossAccent,
+              ),
+            ),
             onPressed: () {
               Navigator.pop(ctx);
               vmNotifier.deleteTransaction(id);

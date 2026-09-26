@@ -16,6 +16,7 @@ class _CommonStrings {
   const _CommonStrings();
 
   final String search = "Ara";
+  final String notAvailable = "-";
   final String save = "Kaydet";
   final String update = "Güncelle";
   final String cancel = "İptal";
@@ -100,49 +101,71 @@ class _MessageStrings {
   final String emptyTicker = "Bu kategori için anlık piyasa verisi bulunamadı.";
   String noResultsFor(String query) => "'$query' ile eşleşen sonuç bulunamadı.";
 
+  final String firstSyncPending = "İlk veriler alınıyor...";
+  final String neverSyncedError =
+      "Piyasa verileri alınamadı. Bağlantınızı kontrol edin.";
+  String lastSuccessfulSyncWith(String time, int failedAttempts) =>
+      "Son başarılı veri: $time — $failedAttempts deneme başarısız oluyor.";
+
   final String deleteWarningTitle = "İşlemi Sil?";
-  final String deleteWarningBody = "Bu işlem geri alınamaz. Portföy hesaplamalarınız kalıcı olarak güncellenecektir.";
+  final String deleteWarningBody =
+      "Bu işlem geri alınamaz. Portföy hesaplamalarınız kalıcı olarak güncellenecektir.";
 
   final String invalidAmount = "Lütfen geçerli bir miktar giriniz.";
   final String invalidPrice = "Lütfen geçerli bir fiyat giriniz.";
-  final String insufficientBalance = "Yetersiz bakiye. Satış miktarı, mevcut varlık miktarını aşamaz.";
+  final String insufficientBalance =
+      "Yetersiz bakiye. Satış miktarı, mevcut varlık miktarını aşamaz.";
   final String transactionFailed = "İşlem başarısız";
   final String invalidForm = "Lütfen geçerli bir miktar ve fiyat giriniz.";
 
-  final String emptyPortfolioForSell = "Portföyünüzde satışı yapılabilecek aktif bir varlık bulunmuyor.";
-  final String selectAssetToBegin = "İşleme başlamak için lütfen bir varlık seçin.";
-  String insufficientBalanceAmount(num amount) => "Yetersiz bakiye. Elinizde $amount adet bulunuyor.";
-  String transactionFailedWith(String error) => "Kayıt sırasında hata oluştu: $error";
+  final String emptyPortfolioForSell =
+      "Portföyünüzde satışı yapılabilecek aktif bir varlık bulunmuyor.";
+  final String selectAssetToBegin =
+      "İşleme başlamak için lütfen bir varlık seçin.";
+  String insufficientBalanceAmount(num amount) =>
+      "Yetersiz bakiye. Elinizde $amount adet bulunuyor.";
+  String transactionFailedWith(String error) =>
+      "Kayıt sırasında hata oluştu: $error";
 
   final String systemHealthyBody = "Tüm piyasa verileri güncel.";
-  final String offlineBody = "Sistem çevrimdışı. Sadece önbellekteki veriler gösteriliyor.";
+  final String offlineBody =
+      "Sistem çevrimdışı. Sadece önbellekteki veriler gösteriliyor.";
   final String degradedBodyPrefix = "Şu veri tiplerinde gecikme yaşanıyor: ";
 
   final String menuPlaceholder = "Menü Seçenekleri Buraya Gelecek";
-  final String converterUnderConstruction = "Çevirici Ekranı\n(Yapım Aşamasında)";
+  final String converterUnderConstruction =
+      "Çevirici Ekranı\n(Yapım Aşamasında)";
 
   final String chartLoadFailed = "Grafik yüklenemedi.";
   final String noDataForRange = "Bu aralık için veri yok.";
 
-  final String emptyPastDate = "Geçmişteki bir kararın sonucunu görmek için tarih seçin.";
+  final String emptyPastDate =
+      "Geçmişteki bir kararın sonucunu görmek için tarih seçin.";
   final String noPastDataFound = "Seçilen tarih için geçmiş veri bulunamadı.";
-  final String editUnderConstruction = "İşlem düzenleme modu yakında yeni tasarımla aktif olacak.";
+  final String editUnderConstruction =
+      "İşlem düzenleme modu yakında yeni tasarımla aktif olacak.";
 
   // Bulut Yedekleme Mesajları
-  final String googleDriveBackupSubtitle = "Kişisel kasanızı Google Drive ile yedekleyin";
+  final String googleDriveBackupSubtitle =
+      "Kişisel kasanızı Google Drive ile yedekleyin";
   final String icloudBackupSubtitle = "Kişisel kasanızı iCloud ile yedekleyin";
 
-  final String googleDriveSuccess = "Verileriniz Google Drive'a başarıyla yedeklendi.";
+  final String googleDriveSuccess =
+      "Verileriniz Google Drive'a başarıyla yedeklendi.";
   final String icloudSuccess = "Verileriniz iCloud'a başarıyla yedeklendi.";
 
-  final String googleDriveError = "Google Drive bağlantısında bir sorun oluştu.";
-  final String icloudError = "iCloud erişimi başarısız. Lütfen ayarlarınızı kontrol edin.";
-  final String loginCanceled = "Giriş işlemi iptal edildi veya yetki verilmedi.";
+  final String googleDriveError =
+      "Google Drive bağlantısında bir sorun oluştu.";
+  final String icloudError =
+      "iCloud erişimi başarısız. Lütfen ayarlarınızı kontrol edin.";
+  final String loginCanceled =
+      "Giriş işlemi iptal edildi veya yetki verilmedi.";
   final String backupFailed = "Yedekleme işlemi tamamlanamadı.";
 
   final String unexpectedError = "Beklenmeyen bir hata oluştu.";
   final String transactionNotFound = "İşlem veritabanında bulunamadı.";
-  final String editLockedWarning = "Bu işlemden satış yapıldığı için finansal veriler değiştirilemez. Sadece notu güncelleyebilirsiniz.";
+  final String editLockedWarning =
+      "Bu işlemden satış yapıldığı için finansal veriler değiştirilemez. Sadece notu güncelleyebilirsiniz.";
 
   String connectionEstablished(String email) => "Bağlantı Kuruldu: $email";
 }
@@ -175,10 +198,12 @@ class _ConverterStrings {
   final String buyAsset = "Alınacak Varlık";
   final String opportunityCost = "Fırsat Maliyeti Analizi";
   final String selectDate = "Geçmiş Bir Tarih Seçin";
-  final String modeWarning = "Seçilen varlıklar Kapalıçarşı'da (Fiziki) takas edilemez.";
+  final String modeWarning =
+      "Seçilen varlıklar Kapalıçarşı'da (Fiziki) takas edilemez.";
 
   final String ifYouTradedThatDay = "Eğer bu takası tam o gün yapsaydınız:";
   final String youWouldHaveReceived = "alacaktınız.";
   final String difference = "Fark:";
-  final String pastAnalysisDisclaimer = "*Geçmiş analizler gün sonu kapanış fiyatları üzerinden oluşturulur.";
+  final String pastAnalysisDisclaimer =
+      "*Geçmiş analizler gün sonu kapanış fiyatları üzerinden oluşturulur.";
 }

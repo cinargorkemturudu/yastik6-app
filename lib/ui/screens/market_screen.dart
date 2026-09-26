@@ -5,6 +5,7 @@ import 'package:yastik_alti/ui/theme/app_strings.dart';
 import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/states/market_view_model.dart';
+import 'package:yastik_alti/ui/states/live_price_provider.dart';
 import 'package:yastik_alti/ui/widgets/cards/market_item_card.dart';
 import 'package:yastik_alti/ui/ui_models/market_item_ui_model.dart';
 import 'package:yastik_alti/ui/widgets/market_item_details_sheet.dart';
@@ -30,6 +31,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(marketViewModelProvider);
     final viewModel = ref.read(marketViewModelProvider.notifier);
+    final marketState = ref.watch(livePriceProvider).valueOrNull;
+    final neverSynced = marketState?.lastUpdate == null;
+    final lastAttemptFailed = (marketState?.consecutiveFailures ?? 0) > 0;
 
     final categories = CategoryHelper.marketCategories;
 
@@ -46,24 +50,35 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppDimens.p16, vertical: AppDimens.p8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimens.p16,
+                    vertical: AppDimens.p8,
+                  ),
                   child: TextField(
                     controller: _searchController,
                     style: AppTextStyles.bodyLarge,
                     onChanged: (value) => viewModel.updateSearchQuery(value),
                     decoration: InputDecoration(
                       hintText: AppStrings.form.searchAssetHint,
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+                      hintStyle: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.textMuted,
+                      ),
                       suffixIcon: state.searchQuery.isNotEmpty
                           ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.textMuted),
-                        onPressed: () {
-                          _searchController.clear();
-                          viewModel.updateSearchQuery("");
-                          FocusScope.of(context).unfocus();
-                        },
-                      )
+                              icon: const Icon(
+                                Icons.clear,
+                                color: AppColors.textMuted,
+                              ),
+                              onPressed: () {
+                                _searchController.clear();
+                                viewModel.updateSearchQuery("");
+                                FocusScope.of(context).unfocus();
+                              },
+                            )
                           : null,
                       filled: true,
                       fillColor: AppColors.inputFill,
@@ -91,9 +106,14 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         body: Container(
           margin: const EdgeInsets.only(top: AppDimens.p8),
           decoration: BoxDecoration(
-            color: AppColors.brandBlue.withValues(alpha: 0.08), // Filling preserved
+            color: AppColors.brandBlue.withValues(
+              alpha: AppAlphas.tint,
+            ), // Filling preserved
             borderRadius: const BorderRadius.all(Radius.circular(24)),
-            border: Border.all(color: Colors.black, width: 1.0), // Black contour
+            border: Border.all(
+              color: Colors.black,
+              width: 1.0,
+            ), // Black contour
           ),
           child: TabBarView(
             children: categories.map((cat) {
@@ -103,7 +123,13 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
                 return item.type == assetType;
               }).toList();
 
-              return _buildFilteredList(state.isLoading, state.searchQuery, filteredItems);
+              return _buildFilteredList(
+                state.isLoading,
+                state.searchQuery,
+                filteredItems,
+                neverSynced: neverSynced,
+                lastAttemptFailed: lastAttemptFailed,
+              );
             }).toList(),
           ),
         ),
@@ -111,13 +137,33 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     );
   }
 
-  Widget _buildFilteredList(bool isLoading, String searchQuery, List<MarketItemUiModel> items) {
-    if (isLoading) return const Center(child: CircularProgressIndicator(color: AppColors.brandBlue));
+  Widget _buildFilteredList(
+    bool isLoading,
+    String searchQuery,
+    List<MarketItemUiModel> items, {
+    required bool neverSynced,
+    required bool lastAttemptFailed,
+  }) {
+    if (isLoading)
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.brandBlue),
+      );
 
     if (items.isEmpty) {
+      String message;
+      if (searchQuery.isNotEmpty) {
+        message = AppStrings.messages.noResultsFor(searchQuery);
+      } else if (neverSynced && lastAttemptFailed) {
+        message = AppStrings.messages.neverSyncedError;
+      } else if (neverSynced) {
+        message = AppStrings.messages.firstSyncPending;
+      } else {
+        message = AppStrings.messages.emptyData;
+      }
+
       return Center(
         child: Text(
-          searchQuery.isEmpty ? AppStrings.messages.emptyData : AppStrings.messages.noResultsFor(searchQuery),
+          message,
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
         ),
       );

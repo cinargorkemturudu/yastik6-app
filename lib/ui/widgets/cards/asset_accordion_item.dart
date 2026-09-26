@@ -16,10 +16,7 @@ import 'package:yastik_alti/domain/models/entities/transaction.dart';
 class AssetAccordionItem extends ConsumerStatefulWidget {
   final OwnedAssetListItemModel model;
 
-  const AssetAccordionItem({
-    super.key,
-    required this.model,
-  });
+  const AssetAccordionItem({super.key, required this.model});
 
   @override
   ConsumerState<AssetAccordionItem> createState() => _AssetAccordionItemState();
@@ -39,12 +36,18 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
 
   String _getRangeParam(String uiRange) {
     switch (uiRange) {
-      case '1D': return 'Day';
-      case '1W': return 'Week';
-      case '1M': return 'Month';
-      case '3M': return 'ThreeMonths';
-      case '1Y': return 'Year';
-      default: return 'Month';
+      case '1D':
+        return 'Day';
+      case '1W':
+        return 'Week';
+      case '1M':
+        return 'Month';
+      case '3M':
+        return 'ThreeMonths';
+      case '1Y':
+        return 'Year';
+      default:
+        return 'Month';
     }
   }
 
@@ -56,7 +59,10 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
       selectedColor: AppColors.brandBlue.withValues(alpha: AppAlphas.bgMedium),
       backgroundColor: AppColors.surface,
       showCheckmark: false,
-      padding: const EdgeInsets.symmetric(horizontal: AppDimens.p4, vertical: 0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimens.p4,
+        vertical: 0,
+      ),
       labelStyle: AppTextStyles.captionBold.copyWith(
         color: isSelected ? AppColors.brandBlue : AppColors.textMuted,
       ),
@@ -68,13 +74,15 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
   Widget build(BuildContext context) {
     final bool isProfit = widget.model.pnlColor != AppColors.lossAccent;
     final Color dailyColor = widget.model.pnlColor;
-    final IconData dailyIcon = isProfit ? Icons.arrow_upward : Icons.arrow_downward;
+    final IconData dailyIcon = isProfit
+        ? Icons.arrow_upward
+        : Icons.arrow_downward;
     final String dailyChangeText = widget.model.pnlPercent;
 
     return AppOutlinedCard(
       padding: EdgeInsets.zero,
       // Explicitly coloring just these cards brand blue
-      backgroundColor: AppColors.brandBlue.withValues(alpha: 0.08),
+      backgroundColor: AppColors.brandBlue.withValues(alpha: AppAlphas.tint),
       child: Column(
         children: [
           // --- HEADER: 3 SÜTUNLU KONSOLİDE YAPI ---
@@ -96,7 +104,10 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                           children: [
                             Text(
                               widget.model.displayTitle,
-                              style: AppTextStyles.h2.copyWith(fontSize: 18, letterSpacing: 0.5),
+                              style: AppTextStyles.h2.copyWith(
+                                fontSize: 18,
+                                letterSpacing: 0.5,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -104,7 +115,9 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                             if (widget.model.displaySubtitle != null)
                               Text(
                                 widget.model.displaySubtitle!,
-                                style: AppTextStyles.caption.copyWith(fontSize: 12),
+                                style: AppTextStyles.caption.copyWith(
+                                  fontSize: 12,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -116,24 +129,40 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                              widget.model.currentPriceText,
-                              style: AppTextStyles.priceLarge.copyWith(fontSize: 16)
+                            widget.model.currentPriceText,
+                            style: AppTextStyles.priceLarge.copyWith(
+                              fontSize: 16,
+                            ),
                           ),
                           const SizedBox(height: AppDimens.p4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppDimens.p6, vertical: AppDimens.p2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimens.p6,
+                              vertical: AppDimens.p2,
+                            ),
                             decoration: BoxDecoration(
-                              color: dailyColor.withValues(alpha: AppAlphas.bgLight),
-                              borderRadius: BorderRadius.circular(AppDimens.radiusXs),
+                              color: dailyColor.withValues(
+                                alpha: AppAlphas.bgLight,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AppDimens.radiusXs,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(dailyIcon, color: dailyColor, size: AppDimens.iconXs),
+                                Icon(
+                                  dailyIcon,
+                                  color: dailyColor,
+                                  size: AppDimens.iconXs,
+                                ),
                                 const SizedBox(width: AppDimens.p2),
                                 Text(
-                                    dailyChangeText,
-                                    style: AppTextStyles.captionBold.copyWith(color: dailyColor, fontSize: 11)
+                                  dailyChangeText,
+                                  style: AppTextStyles.captionBold.copyWith(
+                                    color: dailyColor,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ],
                             ),
@@ -144,7 +173,12 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                   ),
 
                   const SizedBox(height: AppDimens.p12),
-                  Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
+                  Divider(
+                    color: AppColors.textPrimary.withValues(
+                      alpha: AppAlphas.faint,
+                    ),
+                    height: AppDimens.dividerHeight,
+                  ),
                   const SizedBox(height: AppDimens.p12),
 
                   Row(
@@ -177,7 +211,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -186,20 +220,34 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
           // --- EXPANDED BODY: CANLI GRAFİK ---
           if (_isExpanded)
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppDimens.p12, 0, AppDimens.p12, AppDimens.p16),
+              padding: const EdgeInsets.fromLTRB(
+                AppDimens.p12,
+                0,
+                AppDimens.p12,
+                AppDimens.p16,
+              ),
               child: Column(
                 children: [
-                  Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
+                  Divider(
+                    color: AppColors.textPrimary.withValues(
+                      alpha: AppAlphas.faint,
+                    ),
+                    height: AppDimens.dividerHeight,
+                  ),
                   const SizedBox(height: AppDimens.p12),
 
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildRangeChip('1G', '1D'), const SizedBox(width: AppDimens.p8),
-                        _buildRangeChip('1H', '1W'), const SizedBox(width: AppDimens.p8),
-                        _buildRangeChip('1A', '1M'), const SizedBox(width: AppDimens.p8),
-                        _buildRangeChip('3A', '3M'), const SizedBox(width: AppDimens.p8),
+                        _buildRangeChip('1G', '1D'),
+                        const SizedBox(width: AppDimens.p8),
+                        _buildRangeChip('1H', '1W'),
+                        const SizedBox(width: AppDimens.p8),
+                        _buildRangeChip('1A', '1M'),
+                        const SizedBox(width: AppDimens.p8),
+                        _buildRangeChip('3A', '3M'),
+                        const SizedBox(width: AppDimens.p8),
                         _buildRangeChip('1Y', '1Y'),
                       ],
                     ),
@@ -212,39 +260,60 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                     child: Consumer(
                       builder: (context, ref, child) {
                         final params = AssetHistoryParams(
-                            assetCode: widget.model.assetId,
-                            range: _getRangeParam(_selectedRange)
+                          assetCode: widget.model.assetId,
+                          range: _getRangeParam(_selectedRange),
                         );
-                        final historyAsync = ref.watch(assetHistoryProvider(params));
+                        final historyAsync = ref.watch(
+                          assetHistoryProvider(params),
+                        );
                         final portfolioData = ref.watch(portfolioProvider);
 
                         return historyAsync.when(
-                          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brandBlue)),
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.brandBlue,
+                            ),
+                          ),
                           error: (e, s) => Center(
-                              child: Text(AppStrings.messages.chartLoadFailed, style: AppTextStyles.caption.copyWith(color: AppColors.loss))
+                            child: Text(
+                              AppStrings.messages.chartLoadFailed,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.loss,
+                              ),
+                            ),
                           ),
                           data: (data) {
                             final assetTxs = portfolioData.transactions
-                                .where((tx) => tx.assetId == widget.model.assetId)
+                                .where(
+                                  (tx) => tx.assetId == widget.model.assetId,
+                                )
                                 .toList();
 
-                            final chartTxs = assetTxs.map((tx) => ChartTransactionPoint(
-                              date: tx.purchaseDate,
-                              isBuy: tx.type == TransactionType.buy,
-                              amount: tx.amount,
-                              price: tx.purchasePrice,
-                            )).toList();
+                            final chartTxs = assetTxs
+                                .map(
+                                  (tx) => ChartTransactionPoint(
+                                    date: tx.purchaseDate,
+                                    isBuy: tx.type == TransactionType.buy,
+                                    amount: tx.amount,
+                                    price: tx.purchasePrice,
+                                  ),
+                                )
+                                .toList();
 
                             return AssetHistoryChart(
                               data: data,
                               transactions: chartTxs,
-                              color: AppColors.getAssetColor(widget.model.assetId),
+                              color: AppColors.getAssetColor(
+                                widget.model.assetId,
+                              ),
                               selectedRange: _selectedRange,
                               avgCost: widget.model.averageBuyPrice,
                               onScrub: (point) {
-                                if (_hoveredPoint?.timestamp != point?.timestamp) {
+                                if (_hoveredPoint?.timestamp !=
+                                    point?.timestamp) {
                                   Future.microtask(() {
-                                    if (mounted) setState(() => _hoveredPoint = point);
+                                    if (mounted)
+                                      setState(() => _hoveredPoint = point);
                                   });
                                 }
                               },
@@ -262,16 +331,22 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
     );
   }
 
-  Widget _buildLabeledStat(String label, String value, Color valueColor, {String? subText, required CrossAxisAlignment alignment}) {
+  Widget _buildLabeledStat(
+    String label,
+    String value,
+    Color valueColor, {
+    String? subText,
+    required CrossAxisAlignment alignment,
+  }) {
     return Column(
       crossAxisAlignment: alignment,
       children: [
         Text(
           label.toUpperCase(),
           style: AppTextStyles.captionBold.copyWith(
-              color: AppColors.textMuted,
-              fontSize: 9,
-              letterSpacing: 0.5
+            color: AppColors.textMuted,
+            fontSize: 9,
+            letterSpacing: 0.5,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -280,12 +355,12 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
-              value,
-              style: AppTextStyles.bodyMedium.copyWith(
-                  color: valueColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold
-              )
+            value,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: valueColor,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         if (subText != null) ...[
@@ -293,15 +368,15 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-                subText,
-                style: AppTextStyles.caption.copyWith(
-                    color: valueColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500
-                )
+              subText,
+              style: AppTextStyles.caption.copyWith(
+                color: valueColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ]
+        ],
       ],
     );
   }

@@ -35,9 +35,14 @@ class OpportunityCostCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.brandBlue.withValues(alpha: 0.08), // Brand Blue fill
+        color: AppColors.brandBlue.withValues(
+          alpha: AppAlphas.tint,
+        ), // Brand Blue fill
         borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-        border: Border.all(color: Colors.black, width: 1.0), // Solid black contour
+        border: Border.all(
+          color: Colors.black,
+          width: 1.0,
+        ), // Solid black contour
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppDimens.p16),
@@ -52,12 +57,14 @@ class OpportunityCostCard extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: AppDimens.p8),
                   child: Text(
                     AppStrings.messages.emptyPastDate,
-                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textFaint),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textFaint,
+                    ),
                   ),
                 ),
               )
             else
-            // Pass the unwrapped date explicitly to avoid unwrap errors later
+              // Pass the unwrapped date explicitly to avoid unwrap errors later
               _buildAnalysisResult(ref, selectedDate!),
           ],
         ),
@@ -81,7 +88,9 @@ class OpportunityCostCard extends ConsumerWidget {
           onTap: () async {
             final picked = await showDatePicker(
               context: context,
-              initialDate: selectedDate ?? DateTime.now().subtract(const Duration(days: 30)),
+              initialDate:
+                  selectedDate ??
+                  DateTime.now().subtract(const Duration(days: 30)),
               firstDate: DateTime.now().subtract(const Duration(days: 365)),
               lastDate: DateTime.now(),
             );
@@ -89,7 +98,11 @@ class OpportunityCostCard extends ConsumerWidget {
           },
           child: Row(
             children: [
-              const Icon(Icons.calendar_today, size: 14, color: AppColors.brandBlue),
+              const Icon(
+                Icons.calendar_today,
+                size: 14,
+                color: AppColors.brandBlue,
+              ),
               const SizedBox(width: AppDimens.p4),
               Text(
                 selectedDate != null
@@ -103,28 +116,41 @@ class OpportunityCostCard extends ConsumerWidget {
               ),
             ],
           ),
-        )
+        ),
       ],
     );
   }
 
   Widget _buildAnalysisResult(WidgetRef ref, DateTime validDate) {
-    final fromPriceAsync = ref.watch(historicalPriceProvider(HistoricalPriceParams(assetCode: fromAsset.assetCode, date: validDate)));
-    final toPriceAsync = ref.watch(historicalPriceProvider(HistoricalPriceParams(assetCode: toAsset.assetCode, date: validDate)));
+    final fromPriceAsync = ref.watch(
+      historicalPriceProvider(
+        HistoricalPriceParams(assetCode: fromAsset.assetCode, date: validDate),
+      ),
+    );
+    final toPriceAsync = ref.watch(
+      historicalPriceProvider(
+        HistoricalPriceParams(assetCode: toAsset.assetCode, date: validDate),
+      ),
+    );
 
     // 1. Loading State
     if (fromPriceAsync.isLoading || toPriceAsync.isLoading) {
       return const Center(
         child: Padding(
-            padding: EdgeInsets.all(AppDimens.p16),
-            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandBlue)
+          padding: EdgeInsets.all(AppDimens.p16),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.brandBlue,
+          ),
         ),
       );
     }
 
     // 2. Error State (Prevents the blank screen if DB/Provider fails)
     if (fromPriceAsync.hasError || toPriceAsync.hasError) {
-      debugPrint("Historical Price Error - From: ${fromPriceAsync.error}, To: ${toPriceAsync.error}");
+      debugPrint(
+        "Historical Price Error - From: ${fromPriceAsync.error}, To: ${toPriceAsync.error}",
+      );
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: AppDimens.p8),
@@ -140,15 +166,18 @@ class OpportunityCostCard extends ConsumerWidget {
     final Decimal? pastToPrice = toPriceAsync.valueOrNull;
 
     // 3. Null or Invalid Data State
-    if (pastFromPrice == null || pastToPrice == null || pastToPrice <= Decimal.zero) {
+    if (pastFromPrice == null ||
+        pastToPrice == null ||
+        pastToPrice <= Decimal.zero) {
       return Text(
-          AppStrings.messages.noPastDataFound,
-          style: AppTextStyles.caption.copyWith(color: AppColors.lossAccent)
+        AppStrings.messages.noPastDataFound,
+        style: AppTextStyles.caption.copyWith(color: AppColors.lossAccent),
       );
     }
 
     // 4. Parity and Results Calculations
-    Decimal parity = (pastFromPrice.toRational() / pastToPrice.toRational()).toDecimal(scaleOnInfinitePrecision: 10);
+    Decimal parity = (pastFromPrice.toRational() / pastToPrice.toRational())
+        .toDecimal(scaleOnInfinitePrecision: 10);
     Decimal pastResult = amount * parity;
 
     Decimal netDiff = currentResult - pastResult;
@@ -201,27 +230,45 @@ class OpportunityCostCard extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: AppDimens.p2),
                 child: AppSafeText(
                   displayName,
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: AppDimens.p4),
               Padding(
                 padding: const EdgeInsets.only(bottom: AppDimens.p2),
-                child: Text(AppStrings.converter.youWouldHaveReceived, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                child: Text(
+                  AppStrings.converter.youWouldHaveReceived,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppDimens.p12),
-          Container(height: 1, color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint)),
+          Container(
+            height: 1,
+            color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint),
+          ),
           const SizedBox(height: AppDimens.p12),
           Row(
             children: [
-              Icon(isProfit ? Icons.trending_up : Icons.trending_down, color: trendColor, size: 20),
+              Icon(
+                isProfit ? Icons.trending_up : Icons.trending_down,
+                color: trendColor,
+                size: 20,
+              ),
               const SizedBox(width: AppDimens.p6),
               Flexible(
                 child: Text(
                   "${AppStrings.converter.difference} ${AppFormatter.signedAmount(netDiff)} (${AppFormatter.signedPercent(percentDiff)})",
-                  style: AppTextStyles.bodyLarge.copyWith(color: trendColor, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: trendColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -231,7 +278,10 @@ class OpportunityCostCard extends ConsumerWidget {
           const SizedBox(height: AppDimens.p8),
           Text(
             AppStrings.converter.pastAnalysisDisclaimer,
-            style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textFaint),
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 9,
+              color: AppColors.textFaint,
+            ),
           ),
         ],
       ),

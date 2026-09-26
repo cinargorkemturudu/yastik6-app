@@ -16,12 +16,7 @@ class LotCard extends ConsumerStatefulWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
-  const LotCard({
-    super.key,
-    required this.model,
-    this.onEdit,
-    this.onDelete,
-  });
+  const LotCard({super.key, required this.model, this.onEdit, this.onDelete});
 
   @override
   ConsumerState<LotCard> createState() => _LotCardState();
@@ -47,14 +42,17 @@ class _LotCardState extends ConsumerState<LotCard> {
     return AppOutlinedCard(
       onTap: _toggle,
       borderColor: Colors.black,
-      backgroundColor: AppColors.brandBlue.withValues(alpha: 0.08),
+      backgroundColor: AppColors.brandBlue.withValues(alpha: AppAlphas.tint),
       child: Column(
         children: [
           _buildHeader(context, ref),
 
           if (_isExpanded) ...[
             const SizedBox(height: AppDimens.p12),
-            Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: 1),
+            Divider(
+              color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint),
+              height: 1,
+            ),
             const SizedBox(height: AppDimens.p12),
             _buildExpandedDetails(ref),
           ],
@@ -66,10 +64,14 @@ class _LotCardState extends ConsumerState<LotCard> {
   Widget _buildSellSlip() {
     return AppOutlinedCard(
       borderColor: Colors.black,
-      backgroundColor: AppColors.brandBlue.withValues(alpha: 0.08),
+      backgroundColor: AppColors.brandBlue.withValues(alpha: AppAlphas.tint),
       child: Row(
         children: [
-          const Icon(Icons.remove_circle_outline, color: AppColors.lossAccent, size: 16),
+          const Icon(
+            Icons.remove_circle_outline,
+            color: AppColors.lossAccent,
+            size: 16,
+          ),
           const SizedBox(width: AppDimens.p8),
           Expanded(
             child: Column(
@@ -79,7 +81,10 @@ class _LotCardState extends ConsumerState<LotCard> {
                   children: [
                     Text(
                       AppStrings.labels.sell.toUpperCase(),
-                      style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 10),
+                      style: AppTextStyles.captionBold.copyWith(
+                        color: AppColors.lossAccent,
+                        fontSize: 10,
+                      ),
                     ),
                     Text(
                       " - ${widget.model.dateText}",
@@ -90,7 +95,10 @@ class _LotCardState extends ConsumerState<LotCard> {
                 const SizedBox(height: 2),
                 Text(
                   _hasNote ? widget.model.note! : widget.model.displayTitle,
-                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -100,7 +108,11 @@ class _LotCardState extends ConsumerState<LotCard> {
             children: [
               Text(
                 "- ${widget.model.originalAmountText}",
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.lossAccent, fontWeight: FontWeight.bold, fontSize: 13),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.lossAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -115,10 +127,16 @@ class _LotCardState extends ConsumerState<LotCard> {
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
-    final isRealizedMode = ref.watch(homeViewModelProvider.select((value) => value.isRealizedMode));
+    final isRealizedMode = ref.watch(
+      homeViewModelProvider.select((value) => value.isRealizedMode),
+    );
 
-    final pnlText = isRealizedMode ? widget.model.totalRealizedPnl : widget.model.currentUnrealizedPnl;
-    final pnlColor = isRealizedMode ? widget.model.realizedColor : widget.model.unrealizedColor;
+    final pnlText = isRealizedMode
+        ? widget.model.totalRealizedPnl
+        : widget.model.currentUnrealizedPnl;
+    final pnlColor = isRealizedMode
+        ? widget.model.realizedColor
+        : widget.model.unrealizedColor;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -134,7 +152,9 @@ class _LotCardState extends ConsumerState<LotCard> {
                   widget.model.note!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.captionBold.copyWith(fontWeight: FontWeight.w600),
+                  style: AppTextStyles.captionBold.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 2),
               ],
@@ -156,7 +176,10 @@ class _LotCardState extends ConsumerState<LotCard> {
                 "${widget.model.originalAmountText} ${widget.model.displayTitle}",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -173,26 +196,41 @@ class _LotCardState extends ConsumerState<LotCard> {
             if (pnlText != null)
               Text(
                 pnlText,
-                style: AppTextStyles.bodyMedium.copyWith(color: pnlColor, fontSize: 13, fontWeight: FontWeight.bold),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: pnlColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             const SizedBox(height: 2),
             Text(
               widget.model.profitPercent,
-              style: AppTextStyles.captionBold.copyWith(color: pnlColor, fontSize: 10),
+              style: AppTextStyles.captionBold.copyWith(
+                color: pnlColor,
+                fontSize: 10,
+              ),
             ),
           ],
         ),
 
         const SizedBox(width: AppDimens.p6),
-        Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: AppColors.brandBlue, size: 18),
+        Icon(
+          _isExpanded ? Icons.expand_less : Icons.expand_more,
+          color: AppColors.brandBlue,
+          size: 18,
+        ),
       ],
     );
   }
 
   Widget _buildExpandedDetails(WidgetRef ref) {
     final portfolio = ref.watch(portfolioProvider);
-    final position = portfolio.snapshot.positions.firstWhereOrNull((p) => p.asset.symbol == widget.model.symbol);
-    final generalAvgCostText = position != null ? AppFormatter.money(position.averageBuyPrice) : "-";
+    final position = portfolio.snapshot.positions.firstWhereOrNull(
+      (p) => p.asset.symbol == widget.model.symbol,
+    );
+    final generalAvgCostText = position != null
+        ? AppFormatter.money(position.averageBuyPrice)
+        : "-";
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +251,13 @@ class _LotCardState extends ConsumerState<LotCard> {
                   widget.model.unrealizedColor ?? AppColors.textPrimary,
                 ),
               ),
-              Container(width: 1, height: 24, color: AppColors.textPrimary.withValues(alpha: AppAlphas.bgMedium)),
+              Container(
+                width: 1,
+                height: 24,
+                color: AppColors.textPrimary.withValues(
+                  alpha: AppAlphas.bgMedium,
+                ),
+              ),
               Expanded(
                 child: _buildStatItem(
                   AppStrings.labels.realizedSold.toUpperCase(),
@@ -235,12 +279,12 @@ class _LotCardState extends ConsumerState<LotCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                    "${AppStrings.labels.buy}: ${widget.model.buyPriceText}",
-                    style: AppTextStyles.captionBold.copyWith(fontSize: 9)
+                  "${AppStrings.labels.buy}: ${widget.model.buyPriceText}",
+                  style: AppTextStyles.captionBold.copyWith(fontSize: 9),
                 ),
                 Text(
-                    "${AppStrings.labels.avgCost} $generalAvgCostText",
-                    style: AppTextStyles.captionBold.copyWith(fontSize: 9)
+                  "${AppStrings.labels.avgCost} $generalAvgCostText",
+                  style: AppTextStyles.captionBold.copyWith(fontSize: 9),
                 ),
               ],
             ),
@@ -249,8 +293,12 @@ class _LotCardState extends ConsumerState<LotCard> {
               borderRadius: BorderRadius.circular(AppDimens.radiusXs),
               child: LinearProgressIndicator(
                 value: widget.model.progressVal,
-                backgroundColor: AppColors.lossAccent.withValues(alpha: AppAlphas.bgMedium),
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.profitAccent),
+                backgroundColor: AppColors.lossAccent.withValues(
+                  alpha: AppAlphas.bgMedium,
+                ),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.profitAccent,
+                ),
                 minHeight: 4,
               ),
             ),
@@ -259,56 +307,92 @@ class _LotCardState extends ConsumerState<LotCard> {
 
         if (widget.model.allocations.isNotEmpty) ...[
           const SizedBox(height: AppDimens.p12),
-          ...widget.model.allocations.map((sale) => Padding(
-            padding: const EdgeInsets.only(bottom: AppDimens.p6),
-            child: Row(
-              children: [
-                const Icon(Icons.subdirectory_arrow_right, color: AppColors.brandBlue, size: 12),
-                const SizedBox(width: AppDimens.p6),
-                Text(sale.date, style: AppTextStyles.captionBold.copyWith(fontSize: 10)),
-                const Spacer(),
-                Text(
-                    "-${sale.amount}",
-                    style: AppTextStyles.captionBold.copyWith(color: AppColors.lossAccent, fontSize: 11)
-                ),
-                const SizedBox(width: AppDimens.p8),
-                SizedBox(
-                  width: 50,
-                  child: Text(
-                    sale.profitText,
-                    textAlign: TextAlign.end,
-                    style: AppTextStyles.captionBold.copyWith(color: sale.profitColor, fontSize: 11),
+          ...widget.model.allocations.map(
+            (sale) => Padding(
+              padding: const EdgeInsets.only(bottom: AppDimens.p6),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.subdirectory_arrow_right,
+                    color: AppColors.brandBlue,
+                    size: 12,
                   ),
-                ),
-              ],
+                  const SizedBox(width: AppDimens.p6),
+                  Text(
+                    sale.date,
+                    style: AppTextStyles.captionBold.copyWith(fontSize: 10),
+                  ),
+                  const Spacer(),
+                  Text(
+                    "-${sale.amount}",
+                    style: AppTextStyles.captionBold.copyWith(
+                      color: AppColors.lossAccent,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(width: AppDimens.p8),
+                  SizedBox(
+                    width: 50,
+                    child: Text(
+                      sale.profitText,
+                      textAlign: TextAlign.end,
+                      style: AppTextStyles.captionBold.copyWith(
+                        color: sale.profitColor,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
         ],
 
         const SizedBox(height: AppDimens.p4),
-        Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint)),
+        Divider(
+          color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint),
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             if (widget.onEdit != null)
               TextButton.icon(
                 onPressed: widget.onEdit,
-                icon: const Icon(Icons.edit, size: 12, color: AppColors.brandBlue),
-                label: Text(AppStrings.common.edit.toUpperCase(), style: AppTextStyles.captionBold.copyWith(fontSize: 10)),
+                icon: const Icon(
+                  Icons.edit,
+                  size: 12,
+                  color: AppColors.brandBlue,
+                ),
+                label: Text(
+                  AppStrings.common.edit.toUpperCase(),
+                  style: AppTextStyles.captionBold.copyWith(fontSize: 10),
+                ),
               ),
             if (widget.onDelete != null)
               TextButton.icon(
                 onPressed: widget.onDelete,
-                icon: const Icon(Icons.delete, size: 12, color: AppColors.brandBlue),
-                label: Text(AppStrings.common.delete.toUpperCase(), style: AppTextStyles.captionBold.copyWith(fontSize: 10)),
+                icon: const Icon(
+                  Icons.delete,
+                  size: 12,
+                  color: AppColors.brandBlue,
+                ),
+                label: Text(
+                  AppStrings.common.delete.toUpperCase(),
+                  style: AppTextStyles.captionBold.copyWith(fontSize: 10),
+                ),
               ),
           ],
-        )
+        ),
       ],
     );
   }
 
-  Widget _buildStatItem(String title, String subTitle, String value, Color color) {
+  Widget _buildStatItem(
+    String title,
+    String subTitle,
+    String value,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppDimens.p6),
       child: Column(
@@ -316,8 +400,18 @@ class _LotCardState extends ConsumerState<LotCard> {
         children: [
           Text(title, style: AppTextStyles.captionBold.copyWith(fontSize: 9)),
           const SizedBox(height: 2),
-          Text(value, style: AppTextStyles.bodyLarge.copyWith(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
-          Text(subTitle, style: AppTextStyles.captionBold.copyWith(fontSize: 10)),
+          Text(
+            value,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+          Text(
+            subTitle,
+            style: AppTextStyles.captionBold.copyWith(fontSize: 10),
+          ),
         ],
       ),
     );

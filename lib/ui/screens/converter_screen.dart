@@ -82,7 +82,9 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
         final currentTextValue = AppFormatter.parseInput(_sellAmountCtrl.text);
 
         if (currentTextValue != next.amount && !_sellFocusNode.hasFocus) {
-          final sellPrecision = next.fromAsset?.type == AssetType.crypto ? 4 : 2;
+          final sellPrecision = next.fromAsset?.type == AssetType.crypto
+              ? 4
+              : 2;
           final newString = next.amount > Decimal.zero
               ? AppFormatter.amount(next.amount, "", precision: sellPrecision)
               : '';
@@ -175,23 +177,26 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
   }
 
   Widget _buildAssetCard(
-      BuildContext context,
-      WidgetRef ref, {
-        required String title,
-        required PriceQuote? quote,
-        required bool isInput,
-        required TextEditingController controller,
-        FocusNode? focusNode,
-        Function(String)? onAmountChanged,
-        required Function(PriceQuote) onAssetSelected,
-      }) {
+    BuildContext context,
+    WidgetRef ref, {
+    required String title,
+    required PriceQuote? quote,
+    required bool isInput,
+    required TextEditingController controller,
+    FocusNode? focusNode,
+    Function(String)? onAmountChanged,
+    required Function(PriceQuote) onAssetSelected,
+  }) {
     String displayTitle = AppStrings.common.select;
     String? displaySubtitle;
 
     if (quote != null) {
       final String cleanCode = AppFormatter.cleanAssetCode(quote.assetCode);
       final String cleanName = AppFormatter.cleanAssetName(quote.name);
-      final String displayName = AssetVisualMapper.getName(cleanCode, cleanName);
+      final String displayName = AssetVisualMapper.getName(
+        cleanCode,
+        cleanName,
+      );
 
       switch (quote.type) {
         case AssetType.currency:
@@ -214,7 +219,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.brandBlue.withValues(alpha: 0.08),
+        color: AppColors.brandBlue.withValues(alpha: AppAlphas.tint),
         borderRadius: BorderRadius.circular(AppDimens.radiusMd),
         border: Border.all(color: Colors.black, width: 1.0),
       ),
@@ -272,35 +277,31 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
         ),
         footer: quote != null
             ? Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppSafeText(
-              displaySubtitle ?? "",
-              style: AppTextStyles.caption.copyWith(height: 1.2),
-              maxLines: 2,
-            ),
-            const SizedBox(width: AppDimens.p12),
-            Text(
-              "${isInput ? 'Alış' : 'Satış'}: ${AppFormatter.amount(
-                isInput ? quote.bid : quote.ask,
-                "",
-                precision: quote.type == AssetType.crypto ? 4 : 2,
-              )} TL",
-              style: AppTextStyles.caption,
-            ),
-          ],
-        )
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppSafeText(
+                    displaySubtitle ?? "",
+                    style: AppTextStyles.caption.copyWith(height: 1.2),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(width: AppDimens.p12),
+                  Text(
+                    "${isInput ? 'Alış' : 'Satış'}: ${AppFormatter.amount(isInput ? quote.bid : quote.ask, "", precision: quote.type == AssetType.crypto ? 4 : 2)} TL",
+                    style: AppTextStyles.caption,
+                  ),
+                ],
+              )
             : null,
       ),
     );
   }
 
   void _showAssetPicker(
-      BuildContext context,
-      WidgetRef ref,
-      Function(PriceQuote) onSelected,
-      ) {
+    BuildContext context,
+    WidgetRef ref,
+    Function(PriceQuote) onSelected,
+  ) {
     final marketState = ref.read(livePriceProvider).valueOrNull;
     final marketAssets = marketState?.marketAssets ?? [];
 

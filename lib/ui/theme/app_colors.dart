@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 class AppAlphas {
   AppAlphas._();
 
   // Çok hafif arka planlar (Çizgiler, gölgeler, çok silik yüzeyler)
   static const double faint = 0.05;
+  static const double tint = 0.08; // Standart kart/konteyner dolgu tonu
   static const double hover = 0.10;
   static const double bgLight = 0.12;
 
@@ -15,6 +17,7 @@ class AppAlphas {
   // Belirgin vurgular (Buton kenarlıkları, seçili olmayan ikonlar)
   static const double borderActive = 0.50;
 }
+
 class AppColors {
   AppColors._();
 
@@ -34,11 +37,15 @@ class AppColors {
   // --- Anlamsal Renkler ---
   static const Color profit = Color(0xFF4CAF50);
   static const Color loss = Color(0xFFE53935);
-  static const Color neutral = Colors.white; // Unified to white to avoid gray text
+  static const Color neutral =
+      Colors.white; // Unified to white to avoid gray text
 
   static const Color profitAccent = Colors.greenAccent;
   static const Color lossAccent = Colors.redAccent;
-  static const Color brandBlue = Color(0xFF7466FF); // Updated to the new brand color
+  static const Color warning = Colors.orangeAccent;
+  static const Color brandBlue = Color(
+    0xFF7466FF,
+  ); // Updated to the new brand color
 
   // --- Kategori Renkleri ---
   static const Color metal = Color(0xFFFFD700);
@@ -86,5 +93,4 @@ class AppColors {
     final index = cleanCode.hashCode.abs() % Colors.primaries.length;
     return Colors.primaries[index];
   }
-  
 }

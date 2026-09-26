@@ -22,10 +22,7 @@ class AppOutlinedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget content = Padding(
-      padding: padding,
-      child: child,
-    );
+    Widget content = Padding(padding: padding, child: child);
 
     if (onTap != null) {
       content = Material(
@@ -33,7 +30,9 @@ class AppOutlinedCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-          highlightColor: AppColors.textPrimary.withValues(alpha: AppAlphas.faint),
+          highlightColor: AppColors.textPrimary.withValues(
+            alpha: AppAlphas.faint,
+          ),
           splashColor: AppColors.textPrimary.withValues(alpha: AppAlphas.hover),
           child: content,
         ),
@@ -44,12 +43,11 @@ class AppOutlinedCard extends StatelessWidget {
       margin: margin,
       decoration: BoxDecoration(
         // Centralized Defaults: Brand Blue Fill & Black Contour
-        color: backgroundColor ?? AppColors.brandBlue.withValues(alpha: 0.08),
+        color:
+            backgroundColor ??
+            AppColors.brandBlue.withValues(alpha: AppAlphas.tint),
         borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-        border: Border.all(
-          color: borderColor ?? Colors.black,
-          width: 1.0,
-        ),
+        border: Border.all(color: borderColor ?? Colors.black, width: 1.0),
       ),
       child: content,
     );

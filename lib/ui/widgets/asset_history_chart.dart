@@ -20,10 +20,7 @@ import 'package:yastik_alti/ui/utils/app_formatter.dart';
 class AssetAccordionItem extends ConsumerStatefulWidget {
   final OwnedAssetListItemModel model;
 
-  const AssetAccordionItem({
-    super.key,
-    required this.model,
-  });
+  const AssetAccordionItem({super.key, required this.model});
 
   @override
   ConsumerState<AssetAccordionItem> createState() => _AssetAccordionItemState();
@@ -43,12 +40,18 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
 
   String _getRangeParam(String uiRange) {
     switch (uiRange) {
-      case '1D': return 'Day';
-      case '1W': return 'Week';
-      case '1M': return 'Month';
-      case '3M': return 'ThreeMonths';
-      case '1Y': return 'Year';
-      default: return 'Month';
+      case '1D':
+        return 'Day';
+      case '1W':
+        return 'Week';
+      case '1M':
+        return 'Month';
+      case '3M':
+        return 'ThreeMonths';
+      case '1Y':
+        return 'Year';
+      default:
+        return 'Month';
     }
   }
 
@@ -60,7 +63,10 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
       selectedColor: AppColors.brandBlue.withValues(alpha: AppAlphas.bgMedium),
       backgroundColor: AppColors.surface,
       showCheckmark: false,
-      padding: const EdgeInsets.symmetric(horizontal: AppDimens.p4, vertical: 0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimens.p4,
+        vertical: 0,
+      ),
       labelStyle: AppTextStyles.captionBold.copyWith(
         color: isSelected ? AppColors.brandBlue : AppColors.textMuted,
       ),
@@ -72,13 +78,15 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
   Widget build(BuildContext context) {
     final bool isProfit = widget.model.pnlColor != AppColors.lossAccent;
     final Color dailyColor = widget.model.pnlColor;
-    final IconData dailyIcon = isProfit ? Icons.arrow_upward : Icons.arrow_downward;
+    final IconData dailyIcon = isProfit
+        ? Icons.arrow_upward
+        : Icons.arrow_downward;
     final String dailyChangeText = widget.model.pnlPercent;
 
     return AppOutlinedCard(
       padding: EdgeInsets.zero,
       // Explicitly coloring just these cards brand blue
-      backgroundColor: AppColors.brandBlue.withValues(alpha: 0.08),
+      backgroundColor: AppColors.brandBlue.withValues(alpha: AppAlphas.tint),
       child: Column(
         children: [
           // --- HEADER: 3 SÜTUNLU KONSOLİDE YAPI ---
@@ -100,7 +108,10 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                           children: [
                             Text(
                               widget.model.displayTitle,
-                              style: AppTextStyles.h2.copyWith(fontSize: 18, letterSpacing: 0.5),
+                              style: AppTextStyles.h2.copyWith(
+                                fontSize: 18,
+                                letterSpacing: 0.5,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -108,7 +119,9 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                             if (widget.model.displaySubtitle != null)
                               Text(
                                 widget.model.displaySubtitle!,
-                                style: AppTextStyles.caption.copyWith(fontSize: 12),
+                                style: AppTextStyles.caption.copyWith(
+                                  fontSize: 12,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -120,24 +133,40 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                              widget.model.currentPriceText,
-                              style: AppTextStyles.priceLarge.copyWith(fontSize: 16)
+                            widget.model.currentPriceText,
+                            style: AppTextStyles.priceLarge.copyWith(
+                              fontSize: 16,
+                            ),
                           ),
                           const SizedBox(height: AppDimens.p4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppDimens.p6, vertical: AppDimens.p2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimens.p6,
+                              vertical: AppDimens.p2,
+                            ),
                             decoration: BoxDecoration(
-                              color: dailyColor.withValues(alpha: AppAlphas.bgLight),
-                              borderRadius: BorderRadius.circular(AppDimens.radiusXs),
+                              color: dailyColor.withValues(
+                                alpha: AppAlphas.bgLight,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AppDimens.radiusXs,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(dailyIcon, color: dailyColor, size: AppDimens.iconXs),
+                                Icon(
+                                  dailyIcon,
+                                  color: dailyColor,
+                                  size: AppDimens.iconXs,
+                                ),
                                 const SizedBox(width: AppDimens.p2),
                                 Text(
-                                    dailyChangeText,
-                                    style: AppTextStyles.captionBold.copyWith(color: dailyColor, fontSize: 11)
+                                  dailyChangeText,
+                                  style: AppTextStyles.captionBold.copyWith(
+                                    color: dailyColor,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ],
                             ),
@@ -148,7 +177,12 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                   ),
 
                   const SizedBox(height: AppDimens.p12),
-                  Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
+                  Divider(
+                    color: AppColors.textPrimary.withValues(
+                      alpha: AppAlphas.faint,
+                    ),
+                    height: AppDimens.dividerHeight,
+                  ),
                   const SizedBox(height: AppDimens.p12),
 
                   Row(
@@ -181,7 +215,7 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -190,20 +224,34 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
           // --- EXPANDED BODY: CANLI GRAFİK ---
           if (_isExpanded)
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppDimens.p12, 0, AppDimens.p12, AppDimens.p16),
+              padding: const EdgeInsets.fromLTRB(
+                AppDimens.p12,
+                0,
+                AppDimens.p12,
+                AppDimens.p16,
+              ),
               child: Column(
                 children: [
-                  Divider(color: AppColors.textPrimary.withValues(alpha: AppAlphas.faint), height: AppDimens.dividerHeight),
+                  Divider(
+                    color: AppColors.textPrimary.withValues(
+                      alpha: AppAlphas.faint,
+                    ),
+                    height: AppDimens.dividerHeight,
+                  ),
                   const SizedBox(height: AppDimens.p12),
 
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildRangeChip('1G', '1D'), const SizedBox(width: AppDimens.p8),
-                        _buildRangeChip('1H', '1W'), const SizedBox(width: AppDimens.p8),
-                        _buildRangeChip('1A', '1M'), const SizedBox(width: AppDimens.p8),
-                        _buildRangeChip('3A', '3M'), const SizedBox(width: AppDimens.p8),
+                        _buildRangeChip('1G', '1D'),
+                        const SizedBox(width: AppDimens.p8),
+                        _buildRangeChip('1H', '1W'),
+                        const SizedBox(width: AppDimens.p8),
+                        _buildRangeChip('1A', '1M'),
+                        const SizedBox(width: AppDimens.p8),
+                        _buildRangeChip('3A', '3M'),
+                        const SizedBox(width: AppDimens.p8),
                         _buildRangeChip('1Y', '1Y'),
                       ],
                     ),
@@ -216,39 +264,60 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
                     child: Consumer(
                       builder: (context, ref, child) {
                         final params = AssetHistoryParams(
-                            assetCode: widget.model.assetId,
-                            range: _getRangeParam(_selectedRange)
+                          assetCode: widget.model.assetId,
+                          range: _getRangeParam(_selectedRange),
                         );
-                        final historyAsync = ref.watch(assetHistoryProvider(params));
+                        final historyAsync = ref.watch(
+                          assetHistoryProvider(params),
+                        );
                         final portfolioData = ref.watch(portfolioProvider);
 
                         return historyAsync.when(
-                          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brandBlue)),
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.brandBlue,
+                            ),
+                          ),
                           error: (e, s) => Center(
-                              child: Text(AppStrings.messages.chartLoadFailed, style: AppTextStyles.caption.copyWith(color: AppColors.loss))
+                            child: Text(
+                              AppStrings.messages.chartLoadFailed,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.loss,
+                              ),
+                            ),
                           ),
                           data: (data) {
                             final assetTxs = portfolioData.transactions
-                                .where((tx) => tx.assetId == widget.model.assetId)
+                                .where(
+                                  (tx) => tx.assetId == widget.model.assetId,
+                                )
                                 .toList();
 
-                            final chartTxs = assetTxs.map((tx) => ChartTransactionPoint(
-                              date: tx.purchaseDate,
-                              isBuy: tx.type == TransactionType.buy,
-                              amount: tx.amount,
-                              price: tx.purchasePrice,
-                            )).toList();
+                            final chartTxs = assetTxs
+                                .map(
+                                  (tx) => ChartTransactionPoint(
+                                    date: tx.purchaseDate,
+                                    isBuy: tx.type == TransactionType.buy,
+                                    amount: tx.amount,
+                                    price: tx.purchasePrice,
+                                  ),
+                                )
+                                .toList();
 
                             return AssetHistoryChart(
                               data: data,
                               transactions: chartTxs,
-                              color: AppColors.getAssetColor(widget.model.assetId),
+                              color: AppColors.getAssetColor(
+                                widget.model.assetId,
+                              ),
                               selectedRange: _selectedRange,
                               avgCost: widget.model.averageBuyPrice,
                               onScrub: (point) {
-                                if (_hoveredPoint?.timestamp != point?.timestamp) {
+                                if (_hoveredPoint?.timestamp !=
+                                    point?.timestamp) {
                                   Future.microtask(() {
-                                    if (mounted) setState(() => _hoveredPoint = point);
+                                    if (mounted)
+                                      setState(() => _hoveredPoint = point);
                                   });
                                 }
                               },
@@ -266,16 +335,22 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
     );
   }
 
-  Widget _buildLabeledStat(String label, String value, Color valueColor, {String? subText, required CrossAxisAlignment alignment}) {
+  Widget _buildLabeledStat(
+    String label,
+    String value,
+    Color valueColor, {
+    String? subText,
+    required CrossAxisAlignment alignment,
+  }) {
     return Column(
       crossAxisAlignment: alignment,
       children: [
         Text(
           label.toUpperCase(),
           style: AppTextStyles.captionBold.copyWith(
-              color: AppColors.textMuted,
-              fontSize: 9,
-              letterSpacing: 0.5
+            color: AppColors.textMuted,
+            fontSize: 9,
+            letterSpacing: 0.5,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -284,12 +359,12 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
-              value,
-              style: AppTextStyles.bodyMedium.copyWith(
-                  color: valueColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold
-              )
+            value,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: valueColor,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         if (subText != null) ...[
@@ -297,15 +372,15 @@ class _AssetAccordionItemState extends ConsumerState<AssetAccordionItem> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-                subText,
-                style: AppTextStyles.caption.copyWith(
-                    color: valueColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500
-                )
+              subText,
+              style: AppTextStyles.caption.copyWith(
+                color: valueColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ]
+        ],
       ],
     );
   }
@@ -349,12 +424,19 @@ class AssetHistoryChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.isEmpty) {
       return Center(
-        child: Text(AppStrings.messages.emptyData, style: AppTextStyles.bodyMedium),
+        child: Text(
+          AppStrings.messages.emptyData,
+          style: AppTextStyles.bodyMedium,
+        ),
       );
     }
 
-    final rawSortedData = List<PricePoint>.from(data)..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-    final smoothData = ChartDataSmoother.processAndSmooth(rawSortedData, period: 3);
+    final rawSortedData = List<PricePoint>.from(data)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final smoothData = ChartDataSmoother.processAndSmooth(
+      rawSortedData,
+      period: 3,
+    );
 
     if (smoothData.length < 2) {
       return Center(
@@ -393,7 +475,9 @@ class AssetHistoryChart extends StatelessWidget {
       return ms >= startTime && ms <= endTime;
     }).toList()..sort((a, b) => a.date.compareTo(b.date));
 
-    final spots = smoothData.map((p) => FlSpot(p.date.millisecondsSinceEpoch.toDouble(), p.price)).toList();
+    final spots = smoothData
+        .map((p) => FlSpot(p.date.millisecondsSinceEpoch.toDouble(), p.price))
+        .toList();
 
     return LineChart(
       LineChartData(
@@ -407,26 +491,39 @@ class AssetHistoryChart extends StatelessWidget {
           show: true,
           drawVerticalLine: false,
           horizontalInterval: priceRange / 4,
-          getDrawingHorizontalLine: (value) => FlLine(color: Colors.white.withValues(alpha: AppAlphas.faint), strokeWidth: 1),
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.white.withValues(alpha: AppAlphas.faint),
+            strokeWidth: 1,
+          ),
         ),
         titlesData: FlTitlesData(
           show: true,
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 24,
               interval: (endTime - startTime) / 4,
               getTitlesWidget: (value, meta) {
-                if (value == startTime || value == endTime) return const SizedBox();
+                if (value == startTime || value == endTime)
+                  return const SizedBox();
 
                 final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                final format = (selectedRange == 'Day') ? DateFormat('HH:mm') : DateFormat('dd MMM');
+                final format = (selectedRange == 'Day')
+                    ? DateFormat('HH:mm')
+                    : DateFormat('dd MMM');
 
                 return Padding(
                   padding: const EdgeInsets.only(top: AppDimens.p8),
-                  child: Text(format.format(date), style: AppTextStyles.caption),
+                  child: Text(
+                    format.format(date),
+                    style: AppTextStyles.caption,
+                  ),
                 );
               },
             ),
@@ -438,7 +535,10 @@ class AssetHistoryChart extends StatelessWidget {
               interval: priceRange / 4,
               getTitlesWidget: (value, meta) {
                 // [FIXED]: Sınır değerleri saklanarak dikey sıkışma önlendi
-                if (value == meta.min || value == meta.max || value <= minY || value >= maxY) {
+                if (value == meta.min ||
+                    value == meta.max ||
+                    value <= minY ||
+                    value >= maxY) {
                   return const SizedBox.shrink();
                 }
                 // [FIXED]: Metin yatay taşmaları önlemek için SideTitleWidget içine sarıldı
@@ -461,7 +561,9 @@ class AssetHistoryChart extends StatelessWidget {
 
         extraLinesData: ExtraLinesData(
           horizontalLines: [
-            if (avgCost != null && avgCost!.toDouble() >= minY && avgCost!.toDouble() <= maxY)
+            if (avgCost != null &&
+                avgCost!.toDouble() >= minY &&
+                avgCost!.toDouble() <= maxY)
               HorizontalLine(
                 y: avgCost!.toDouble(),
                 color: Colors.white.withValues(alpha: AppAlphas.overlay),
@@ -470,9 +572,13 @@ class AssetHistoryChart extends StatelessWidget {
                 label: HorizontalLineLabel(
                   show: true,
                   alignment: Alignment.topRight,
-                  padding: const EdgeInsets.only(right: AppDimens.p4, bottom: AppDimens.p4),
+                  padding: const EdgeInsets.only(
+                    right: AppDimens.p4,
+                    bottom: AppDimens.p4,
+                  ),
                   style: AppTextStyles.captionBold,
-                  labelResolver: (_) => '${AppStrings.labels.avgShort}: ${AppFormatter.amount(avgCost!, "")}',
+                  labelResolver: (_) =>
+                      '${AppStrings.labels.avgShort}: ${AppFormatter.amount(avgCost!, "")}',
                 ),
               ),
           ],
@@ -492,13 +598,23 @@ class AssetHistoryChart extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [color.withValues(alpha: AppAlphas.borderLight), color.withValues(alpha: 0.0)],
+                colors: [
+                  color.withValues(alpha: AppAlphas.borderLight),
+                  color.withValues(alpha: 0.0),
+                ],
               ),
             ),
           ),
           if (visibleTxs.isNotEmpty)
             LineChartBarData(
-              spots: visibleTxs.map((t) => FlSpot(t.date.millisecondsSinceEpoch.toDouble(), t.price.toDouble())).toList(),
+              spots: visibleTxs
+                  .map(
+                    (t) => FlSpot(
+                      t.date.millisecondsSinceEpoch.toDouble(),
+                      t.price.toDouble(),
+                    ),
+                  )
+                  .toList(),
               isCurved: false,
               color: Colors.transparent,
               barWidth: 0,
@@ -519,32 +635,42 @@ class AssetHistoryChart extends StatelessWidget {
         ],
 
         lineTouchData: LineTouchData(
-          touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
-            if (!event.isInterestedForInteractions || touchResponse == null || touchResponse.lineBarSpots == null) {
-              onScrub(null);
-              return;
-            }
-            final spot = touchResponse.lineBarSpots!.first;
-            if (spot.barIndex == 0) {
-              onScrub(PricePoint(
-                timestamp: DateTime.fromMillisecondsSinceEpoch(spot.x.toInt()),
-                price: Decimal.parse(spot.y.toString()),
-              ));
-            }
-          },
+          touchCallback:
+              (FlTouchEvent event, LineTouchResponse? touchResponse) {
+                if (!event.isInterestedForInteractions ||
+                    touchResponse == null ||
+                    touchResponse.lineBarSpots == null) {
+                  onScrub(null);
+                  return;
+                }
+                final spot = touchResponse.lineBarSpots!.first;
+                if (spot.barIndex == 0) {
+                  onScrub(
+                    PricePoint(
+                      timestamp: DateTime.fromMillisecondsSinceEpoch(
+                        spot.x.toInt(),
+                      ),
+                      price: Decimal.parse(spot.y.toString()),
+                    ),
+                  );
+                }
+              },
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => Colors.blueGrey.shade900.withValues(alpha: 0.95),
+            getTooltipColor: (_) =>
+                Colors.blueGrey.shade900.withValues(alpha: 0.95),
             tooltipPadding: const EdgeInsets.all(AppDimens.p8),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((LineBarSpot touchedSpot) {
-
                 if (touchedSpot.barIndex == 1) {
                   final tx = visibleTxs[touchedSpot.spotIndex];
-                  final type = tx.isBuy ? AppStrings.labels.buy.toUpperCase() : AppStrings.labels.sell.toUpperCase();
+                  final type = tx.isBuy
+                      ? AppStrings.labels.buy.toUpperCase()
+                      : AppStrings.labels.sell.toUpperCase();
 
                   String profitStr = '';
                   if (!tx.isBuy && tx.realizedProfit != null) {
-                    profitStr = '\nK/Z: ${AppFormatter.pnlValue(tx.realizedProfit!)}';
+                    profitStr =
+                        '\nK/Z: ${AppFormatter.pnlValue(tx.realizedProfit!)}';
                   }
 
                   return LineTooltipItem(
@@ -556,33 +682,46 @@ class AssetHistoryChart extends StatelessWidget {
                   );
                 }
 
-                final date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
+                final date = DateTime.fromMillisecondsSinceEpoch(
+                  touchedSpot.x.toInt(),
+                );
                 return LineTooltipItem(
                   '${AppFormatter.moneyFromDouble(touchedSpot.y)}\n',
-                  AppTextStyles.bodyLarge.copyWith(color: color, fontWeight: FontWeight.bold),
+                  AppTextStyles.bodyLarge.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
                   children: [
                     TextSpan(
                       text: DateFormat('dd MMM HH:mm').format(date),
                       style: AppTextStyles.caption,
-                    )
+                    ),
                   ],
                 );
               }).toList();
             },
           ),
-          getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
-            return spotIndexes.map((_) {
-              return TouchedSpotIndicatorData(
-                const FlLine(color: Colors.white30, strokeWidth: 1, dashArray: [3, 3]),
-                FlDotData(getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                  radius: 4,
-                  color: Colors.white,
-                  strokeWidth: 2,
-                  strokeColor: color,
-                )),
-              );
-            }).toList();
-          },
+          getTouchedSpotIndicator:
+              (LineChartBarData barData, List<int> spotIndexes) {
+                return spotIndexes.map((_) {
+                  return TouchedSpotIndicatorData(
+                    const FlLine(
+                      color: Colors.white30,
+                      strokeWidth: 1,
+                      dashArray: [3, 3],
+                    ),
+                    FlDotData(
+                      getDotPainter: (spot, percent, barData, index) =>
+                          FlDotCirclePainter(
+                            radius: 4,
+                            color: Colors.white,
+                            strokeWidth: 2,
+                            strokeColor: color,
+                          ),
+                    ),
+                  );
+                }).toList();
+              },
         ),
       ),
     );
@@ -616,7 +755,9 @@ class TransactionDotPainter extends FlDotPainter {
     return TransactionDotPainter(
       isBuy: b.isBuy,
       iconColor: Color.lerp(a.iconColor, b.iconColor, t) ?? b.iconColor,
-      backgroundColor: Color.lerp(a.backgroundColor, b.backgroundColor, t) ?? b.backgroundColor,
+      backgroundColor:
+          Color.lerp(a.backgroundColor, b.backgroundColor, t) ??
+          b.backgroundColor,
       borderColor: Color.lerp(a.borderColor, b.borderColor, t) ?? b.borderColor,
       radius: (a.radius + (b.radius - a.radius) * t),
     );
@@ -667,5 +808,11 @@ class TransactionDotPainter extends FlDotPainter {
   Size getSize(FlSpot spot) => Size(radius * 2, radius * 2);
 
   @override
-  List<Object?> get props => [isBuy, iconColor, backgroundColor, borderColor, radius];
+  List<Object?> get props => [
+    isBuy,
+    iconColor,
+    backgroundColor,
+    borderColor,
+    radius,
+  ];
 }
