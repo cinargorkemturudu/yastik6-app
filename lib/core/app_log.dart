@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// A centralized logging utility handling both Diagnostic Logging (Debug) 
+/// A centralized logging utility handling both Diagnostic Logging (Debug)
 /// and Operational Telemetry (Production).
 class AppLog {
   AppLog._(); // Private constructor to prevent instantiation
@@ -30,11 +30,11 @@ class AppLog {
   }
 
   static void error(
-      String message, {
-        String domain = 'APP',
-        Object? error,
-        StackTrace? stackTrace,
-      }) {
+    String message, {
+    String domain = 'APP',
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     if (kDebugMode) {
       debugPrint('[$domain] 🔴 $message');
       if (error != null) {
@@ -47,16 +47,19 @@ class AppLog {
   }
 
   // ==========================================
-  // 2. OPERATIONAL TELEMETRY (PRODUCTION)
+  // 2. OPERATIONAL TELEMETRY (DEBUG ONLY FOR NOW)
   // ==========================================
-  // This method survives the release build. It is strictly for tracking 
-  // anonymous events and metadata. NEVER pass user values, balances, or notes here.
+  // Despite the name, this currently does NOT survive the release build — like the
+  // rest of AppLog, it's gated by kDebugMode below. It's kept as a separate method
+  // (rather than folded into info/debug) because it's conceptually a distinct
+  // "analytics event" concept, ready to wire into a real SDK later (see TODO below).
+  // It is strictly for tracking anonymous events and metadata. NEVER pass user
+  // values, balances, or notes here.
 
   /// Tracks privacy-safe events and metadata.
   /// [eventName] should be a clear action (e.g., 'api_error', 'view_screen').
   /// [metadata] should contain safe context (e.g., duration_ms, status_codes).
   static void insight(String eventName, {Map<String, dynamic>? metadata}) {
-
     // [EDITED] VERİ SIZINTISI (DATA LEAKAGE) ÖNLENDİ!
     // Artık debugPrint megafonu sadece geliştirme aşamasındayken (kDebugMode) çalışacak.
     // Canlı ortamda (App Store versiyonunda) sistem konsoluna hiçbir şey yazdırılmayacak.
