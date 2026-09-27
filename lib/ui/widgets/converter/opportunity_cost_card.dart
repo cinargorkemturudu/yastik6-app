@@ -230,6 +230,7 @@ class OpportunityCostCard extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: AppDimens.p2),
                 child: AppSafeText(
                   displayName,
+                  flex: false,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.bold,
