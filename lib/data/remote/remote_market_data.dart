@@ -13,11 +13,9 @@ class RemoteMarketData {
   final http.Client _client;
   final String _baseUrl;
 
-  RemoteMarketData({
-    required http.Client client,
-    required String baseUrl,
-  })  : _client = client,
-        _baseUrl = baseUrl;
+  RemoteMarketData({required http.Client client, required String baseUrl})
+    : _client = client,
+      _baseUrl = baseUrl;
 
   Future<List<PriceQuote>> fetchLatestAll() async {
     final uri = Uri.parse('$_baseUrl/api/prices/market');
@@ -34,7 +32,10 @@ class RemoteMarketData {
       if (res.statusCode != 200) {
         AppLog.debug('HAM API YANITI: ${res.body}', domain: 'NETWORK');
         AppLog.insight('api_error'); // [FIXED]
-        AppLog.error('HTTP ${res.statusCode} from market API', domain: 'NETWORK');
+        AppLog.error(
+          'HTTP ${res.statusCode} from market API',
+          domain: 'NETWORK',
+        );
 
         throw RemoteHttpException(
           statusCode: res.statusCode,
@@ -48,7 +49,12 @@ class RemoteMarketData {
         decoded = jsonDecode(res.body);
       } on FormatException catch (e, stack) {
         AppLog.insight('api_parse_error'); // [FIXED]
-        AppLog.error('JSON Format Exception from market data', domain: 'NETWORK', error: e, stackTrace: stack);
+        AppLog.error(
+          'JSON Format Exception from market data',
+          domain: 'NETWORK',
+          error: e,
+          stackTrace: stack,
+        );
 
         throw RemoteParseException(
           message: 'Invalid JSON format from market data API.',
@@ -67,28 +73,37 @@ class RemoteMarketData {
         }
       }
 
-      final parsedData = list.map((x) {
-        try {
-          return _quoteFromJson(x as Map<String, dynamic>);
-        } catch (e, stack) {
-          AppLog.error(
-            'Data Integrity Failure: Failed to parse a market asset. Asset discarded. Payload: $x',
-            domain: 'NETWORK',
-            error: e,
-            stackTrace: stack,
-          );
-          return null;
-        }
-      }).whereType<PriceQuote>().toList();
+      final parsedData = list
+          .map((x) {
+            try {
+              return _quoteFromJson(x as Map<String, dynamic>);
+            } catch (e, stack) {
+              AppLog.error(
+                'Data Integrity Failure: Failed to parse a market asset. Asset discarded. Payload: $x',
+                domain: 'NETWORK',
+                error: e,
+                stackTrace: stack,
+              );
+              return null;
+            }
+          })
+          .whereType<PriceQuote>()
+          .toList();
 
       return parsedData;
-
     } catch (e, stack) {
       if (e is RemoteHttpException || e is RemoteParseException) {
         rethrow;
       }
-      AppLog.error('Unexpected error fetching market data', domain: 'NETWORK', error: e, stackTrace: stack);
-      throw RemoteParseException(message: 'Unexpected error in fetchLatestAll: $e');
+      AppLog.error(
+        'Unexpected error fetching market data',
+        domain: 'NETWORK',
+        error: e,
+        stackTrace: stack,
+      );
+      throw RemoteParseException(
+        message: 'Unexpected error in fetchLatestAll: $e',
+      );
     }
   }
 
@@ -98,10 +113,14 @@ class RemoteMarketData {
   }) async {
     final safeAssetCode = Uri.encodeComponent(assetCode);
 
-    final uri = Uri.parse('$_baseUrl/api/prices/history/$safeAssetCode')
-        .replace(queryParameters: {'range': range});
+    final uri = Uri.parse(
+      '$_baseUrl/api/prices/history/$safeAssetCode',
+    ).replace(queryParameters: {'range': range});
 
-    AppLog.debug('Dispatching History API Request to $uri for $assetCode', domain: 'NETWORK');
+    AppLog.debug(
+      'Dispatching History API Request to $uri for $assetCode',
+      domain: 'NETWORK',
+    );
 
     try {
       final res = await _client.get(
@@ -114,7 +133,10 @@ class RemoteMarketData {
 
       if (res.statusCode != 200) {
         AppLog.insight('api_error'); // [FIXED]
-        AppLog.error('HTTP ${res.statusCode} from history API for $assetCode', domain: 'NETWORK');
+        AppLog.error(
+          'HTTP ${res.statusCode} from history API for $assetCode',
+          domain: 'NETWORK',
+        );
 
         throw RemoteHttpException(
           statusCode: res.statusCode,
@@ -128,7 +150,12 @@ class RemoteMarketData {
         decoded = jsonDecode(res.body);
       } on FormatException catch (e, stack) {
         AppLog.insight('api_parse_error'); // [FIXED]
-        AppLog.error('JSON Format Exception from history API', domain: 'NETWORK', error: e, stackTrace: stack);
+        AppLog.error(
+          'JSON Format Exception from history API',
+          domain: 'NETWORK',
+          error: e,
+          stackTrace: stack,
+        );
 
         throw RemoteParseException(
           message: 'Invalid JSON format in history API.',
@@ -149,25 +176,36 @@ class RemoteMarketData {
           .toList(growable: false);
 
       return parsedPoints;
-
     } catch (e, stack) {
       if (e is RemoteHttpException || e is RemoteParseException) {
         rethrow;
       }
-      AppLog.error('Unexpected error fetching history for $assetCode', domain: 'NETWORK', error: e, stackTrace: stack);
-      throw RemoteParseException(message: 'Unexpected error in fetchHistory: $e');
+      AppLog.error(
+        'Unexpected error fetching history for $assetCode',
+        domain: 'NETWORK',
+        error: e,
+        stackTrace: stack,
+      );
+      throw RemoteParseException(
+        message: 'Unexpected error in fetchHistory: $e',
+      );
     }
   }
 
   PriceQuote _quoteFromJson(Map<String, dynamic> j) {
-    final bidVal = Decimal.tryParse(j['bid']?.toString() ?? '0') ?? Decimal.zero;
-    final askVal = Decimal.tryParse(j['ask']?.toString() ?? '0') ?? Decimal.zero;
+    final bidVal =
+        Decimal.tryParse(j['bid']?.toString() ?? '0') ?? Decimal.zero;
+    final askVal =
+        Decimal.tryParse(j['ask']?.toString() ?? '0') ?? Decimal.zero;
     final changeRateVal = (j['changeRate'] as num?)?.toDouble() ?? 0.0;
     final convertedFlag = j['isConvertedToTry'] == true;
-    
+    final marketOpenFlag = j['isMarketOpen'] != false;
+
     final type = _mapType(j['type']?.toString());
     if (type == null) {
-      throw FormatException('Unknown or unsupported asset type received: ${j['type']}');
+      throw FormatException(
+        'Unknown or unsupported asset type received: ${j['type']}',
+      );
     }
 
     final asOf = _parseUtc((j['asOfUtc'] ?? '').toString());
@@ -187,6 +225,7 @@ class RemoteMarketData {
       asOf: asOf,
       expiresAt: expiresAt,
       isConvertedtoTry: convertedFlag,
+      isMarketOpen: marketOpenFlag,
     );
   }
 
@@ -201,12 +240,18 @@ class RemoteMarketData {
     if (typeStr == null) return null;
 
     switch (typeStr.toUpperCase()) {
-      case 'METAL': return AssetType.metal;
-      case 'CURRENCY': return AssetType.currency;
-      case 'STOCK': return AssetType.stock;
-      case 'CRYPTO': return AssetType.crypto;
-      case 'INDICATOR': return AssetType.indicator;
-      default: return null;
+      case 'METAL':
+        return AssetType.metal;
+      case 'CURRENCY':
+        return AssetType.currency;
+      case 'STOCK':
+        return AssetType.stock;
+      case 'CRYPTO':
+        return AssetType.crypto;
+      case 'INDICATOR':
+        return AssetType.indicator;
+      default:
+        return null;
     }
   }
 
