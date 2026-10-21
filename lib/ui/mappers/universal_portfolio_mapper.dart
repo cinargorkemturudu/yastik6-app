@@ -52,27 +52,7 @@ class UniversalPortfolioMapper {
       for (final lotProfit in pos.lots) {
         final tx = lotProfit.transaction;
 
-        final rawAllocations = List<Map<String, dynamic>>.from(allocationsMap[tx.id] ?? []);
-        rawAllocations.sort((a, b) {
-          final dateA = DateTime.parse(a['sell_date'].toString());
-          final dateB = DateTime.parse(b['sell_date'].toString());
-          return dateB.compareTo(dateA);
-        });
-
-        final allocationUiModels = rawAllocations.map((row) {
-          final date = DateTime.parse(row['sell_date'].toString());
-          final amount = Decimal.parse(row['used_amount'].toString());
-          final sellPrice = Decimal.parse(row['sell_price'].toString());
-          final profit = (sellPrice - tx.purchasePrice) * amount;
-
-          return SubTransactionUiModel(
-            date: AppFormatter.date(date),
-            amount: AppFormatter.amount(amount, pos.asset.symbol),
-            price: AppFormatter.money(sellPrice),
-            profitText: AppFormatter.pnlValue(profit),
-            profitColor: profit.toPnlColor(),
-          );
-        }).toList();
+        final allocationUiModels = _toAllocationUiModels(tx, allocationsMap, pos.asset.symbol);
 
         lots.add(LotUiModel(
           transactionId: tx.id,
@@ -105,6 +85,34 @@ class UniversalPortfolioMapper {
     return lots;
   }
 
+  static List<SubTransactionUiModel> _toAllocationUiModels(
+    Transaction tx,
+    Map<String, List<Map<String, dynamic>>> allocationsMap,
+    String symbol,
+  ) {
+    final rawAllocations = List<Map<String, dynamic>>.from(allocationsMap[tx.id] ?? []);
+    rawAllocations.sort((a, b) {
+      final dateA = DateTime.parse(a['sell_date'].toString());
+      final dateB = DateTime.parse(b['sell_date'].toString());
+      return dateB.compareTo(dateA);
+    });
+
+    return rawAllocations.map((row) {
+      final date = DateTime.parse(row['sell_date'].toString());
+      final amount = Decimal.parse(row['used_amount'].toString());
+      final sellPrice = Decimal.parse(row['sell_price'].toString());
+      final profit = (sellPrice - tx.purchasePrice) * amount;
+
+      return SubTransactionUiModel(
+        date: AppFormatter.date(date),
+        amount: AppFormatter.amount(amount, symbol),
+        price: AppFormatter.money(sellPrice),
+        profitText: AppFormatter.pnlValue(profit),
+        profitColor: profit.toPnlColor(),
+      );
+    }).toList();
+  }
+
   static List<LotUiModel> toHistoryLots({
     required List<Transaction> allTransactions,
     required Map<String, List<Map<String, dynamic>>> allocationsMap,
@@ -133,14 +141,17 @@ class UniversalPortfolioMapper {
         amountValue: tx.amount,
         originalAmountText: AppFormatter.amount(tx.amount, tx.assetId),
         remainingAmountText: AppFormatter.amount(tx.remainingAmount, tx.assetId),
-        soldAmountText: AppFormatter.amount(Decimal.zero, tx.assetId),
+        soldAmountText: AppFormatter.amount((tx.amount - tx.remainingAmount), tx.assetId),
         buyPriceText: AppFormatter.money(tx.purchasePrice),
         totalCostText: AppFormatter.money((tx.amount * tx.purchasePrice)),
         profitPercent: "",
         currentUnrealizedPnl: "",
         unrealizedColor: AppColors.textPrimary,
-        progressVal: 1.0,
+        progressVal: tx.amount == Decimal.zero ? 0.0 : (tx.remainingAmount.toRational() / tx.amount.toRational()).toDouble(),
         isSellCard: tx.type == TransactionType.sell,
+        allocations: tx.type == TransactionType.buy
+            ? _toAllocationUiModels(tx, allocationsMap, tx.assetId)
+            : const [],
       );
     }).toList();
   }
