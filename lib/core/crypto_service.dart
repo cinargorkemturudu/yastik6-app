@@ -1,80 +1,125 @@
 import 'dart:convert';
-import 'package:encrypt/encrypt.dart' as encrypt;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:isolate';
+import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:pointycastle/export.dart';
+
+/// Wrong passphrase, or the backup was corrupted/tampered with (GCM tag mismatch).
+class BackupDecryptionException implements Exception {
+  const BackupDecryptionException();
+  @override
+  String toString() =>
+      'BackupDecryptionException: wrong passphrase or corrupted backup';
+}
+
+/// Encrypts cloud backups with a key derived from a user passphrase, so a backup
+/// can be restored on any device (the key is never stored anywhere).
+///
+/// File layout: magic "Y6BK" | version (1) | PBKDF2 iterations (uint32 BE) | salt (16) | nonce (12) | AES-256-GCM ciphertext + 16-byte tag.
+/// The header is passed to GCM as associated data, so tampering with it is detected too.
 class CryptoService {
-  static const String _keyStorageKey = 'yastik6_encryption_key';
+  static const int defaultIterations = 210000;
+  static const int _version = 2;
+  static const int _saltLength = 16;
+  static const int _nonceLength = 12;
+  static const int _headerLength = 4 + 1 + 4 + _saltLength + _nonceLength;
+  static final Uint8List _magic = Uint8List.fromList(ascii.encode('Y6BK'));
 
-  final FlutterSecureStorage _secureStorage;
-  encrypt.Key? _encryptionKey;
+  /// PBKDF2 iteration count for new backups. Decryption always uses the count stored in the file.
+  final int iterations;
+  final Random _random;
 
-  // Dependency Injection ile test edilebilir yapıyı koruyoruz
-  CryptoService({FlutterSecureStorage? secureStorage})
-      : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  CryptoService({this.iterations = defaultIterations, Random? random})
+    : _random = random ?? Random.secure();
 
-  /// Uygulama başlarken çağrılır. Anahtarı donanımdan çeker veya yeni üretir.
-  Future<void> init() async {
-    String? base64Key = await _secureStorage.read(key: _keyStorageKey);
+  /// Key derivation is deliberately slow, so the work runs on a background isolate to keep the UI responsive.
+  Future<Uint8List> encryptBackup(List<int> data, String passphrase) {
+    final salt = _randomBytes(_saltLength);
+    final nonce = _randomBytes(_nonceLength);
+    final header =
+        (BytesBuilder()
+              ..add(_magic)
+              ..addByte(_version)
+              ..add(_uint32(iterations))
+              ..add(salt)
+              ..add(nonce))
+            .toBytes();
+    final plain = Uint8List.fromList(data);
+    final iterationCount = iterations;
 
-    if (base64Key == null) {
-      // 32 byte (256 bit) rastgele güvenli anahtar üretimi
-      final secureRandomKey = encrypt.Key.fromSecureRandom(32);
-      base64Key = base64.encode(secureRandomKey.bytes);
+    return Isolate.run(() {
+      final key = _deriveKey(passphrase, salt, iterationCount);
+      final body = _gcm(true, key, nonce, header, plain);
+      return (BytesBuilder(copy: false)
+            ..add(header)
+            ..add(body))
+          .toBytes();
+    });
+  }
 
-      // Üretilen anahtarı donanım kasasına kaydet
-      await _secureStorage.write(key: _keyStorageKey, value: base64Key);
+  /// Throws [FormatException] if [payload] is not a Yastık6 backup,
+  /// and [BackupDecryptionException] if the passphrase is wrong or the file was altered.
+  Future<Uint8List> decryptBackup(Uint8List payload, String passphrase) async {
+    if (payload.length < _headerLength + 16 || !_startsWithMagic(payload)) {
+      throw const FormatException('Not a Yastık6 backup file.');
+    }
+    if (payload[4] != _version) {
+      throw FormatException('Unsupported backup version: ${payload[4]}');
     }
 
-    // Şifreleme işlemlerinde kullanmak üzere anahtarı hafızaya al
-    _encryptionKey = encrypt.Key.fromBase64(base64Key);
+    final header = Uint8List.sublistView(payload, 0, _headerLength);
+    final iterationCount = ByteData.sublistView(payload, 5, 9).getUint32(0);
+    final salt = Uint8List.sublistView(payload, 9, 9 + _saltLength);
+    final nonce = Uint8List.sublistView(
+      payload,
+      9 + _saltLength,
+      _headerLength,
+    );
+    final body = Uint8List.sublistView(payload, _headerLength);
+
+    return Isolate.run(() {
+      final key = _deriveKey(passphrase, salt, iterationCount);
+      try {
+        return _gcm(false, key, nonce, header, body);
+      } on InvalidCipherTextException {
+        throw const BackupDecryptionException();
+      }
+    });
   }
 
-  /// Dışarı aktarılacak saf veriyi AES-256 ile şifreler.
-  String encryptData(String rawData) {
-    if (_encryptionKey == null) {
-      throw Exception("CryptoService is not initialized. Call init() first.");
+  static Uint8List _deriveKey(
+    String passphrase,
+    Uint8List salt,
+    int iterationCount,
+  ) {
+    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
+      ..init(Pbkdf2Parameters(salt, iterationCount, 32));
+    return derivator.process(Uint8List.fromList(utf8.encode(passphrase)));
+  }
+
+  static Uint8List _gcm(
+    bool encrypt,
+    Uint8List key,
+    Uint8List nonce,
+    Uint8List aad,
+    Uint8List input,
+  ) {
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(encrypt, AEADParameters(KeyParameter(key), 128, nonce, aad));
+    return cipher.process(input);
+  }
+
+  bool _startsWithMagic(Uint8List payload) {
+    for (var i = 0; i < _magic.length; i++) {
+      if (payload[i] != _magic[i]) return false;
     }
-
-    // Her şifrelemede benzersiz bir Başlangıç Vektörü (IV) üret (16 byte)
-    final iv = encrypt.IV.fromSecureRandom(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(_encryptionKey!));
-
-    final encrypted = encrypter.encrypt(rawData, iv: iv);
-
-    // IV ve şifreli veriyi çözme aşamasında ayırabilmek için birleştirerek döndür
-    return '${iv.base64}:${encrypted.base64}';
+    return true;
   }
 
-  /// Buluttan gelen şifreli veriyi tekrar okunabilir hale getirir.
-  String decryptData(String encryptedPayload) {
-    if (_encryptionKey == null) {
-      throw Exception("CryptoService is not initialized. Call init() first.");
-    }
+  Uint8List _randomBytes(int length) =>
+      Uint8List.fromList(List.generate(length, (_) => _random.nextInt(256)));
 
-    // IV ve asıl şifreli veriyi ayır
-    final parts = encryptedPayload.split(':');
-    if (parts.length != 2) {
-      throw const FormatException("Invalid encrypted payload format.");
-    }
-
-    final iv = encrypt.IV.fromBase64(parts[0]);
-    final encryptedData = encrypt.Encrypted.fromBase64(parts[1]);
-
-    final encrypter = encrypt.Encrypter(encrypt.AES(_encryptionKey!));
-
-    // Şifreyi çöz ve orijinal veriyi döndür
-    return encrypter.decrypt(encryptedData, iv: iv);
-  }
-
-  /// Veritabanı gibi binary dosyaları şifrelemek için yardımcı metot
-  String encryptBytes(List<int> bytes) {
-    final base64Data = base64.encode(bytes);
-    return encryptData(base64Data);
-  }
-
-  /// Şifreli veriyi çözüp tekrar binary dosyaya dönüştürmek için yardımcı metot
-  List<int> decryptToBytes(String encryptedPayload) {
-    final decryptedString = decryptData(encryptedPayload);
-    return base64.decode(decryptedString);
-  }
+  static Uint8List _uint32(int value) =>
+      (ByteData(4)..setUint32(0, value)).buffer.asUint8List();
 }

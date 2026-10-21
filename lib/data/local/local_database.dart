@@ -1,9 +1,10 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../../core/app_log.dart';
+import '../../domain/services/cloud_backup_service.dart';
 import 'db_constants.dart';
 
-class LocalDatabase {
+class LocalDatabase implements BackupDatabaseFile {
   static const _dbVersion = 3;
 
   // [YENİ] Strict Singleton Prensibi: Uygulama boyunca tek bir instance olmasını garanti eder.
@@ -22,22 +23,40 @@ class LocalDatabase {
     return newDb;
   }
 
+  @override
+  Future<String> get path async =>
+      join(await getDatabasesPath(), DbConstants.dbName);
+
+  /// Flushes any write-ahead-log content into the main file so a byte copy of it is complete.
+  @override
+  Future<void> checkpoint() async {
+    await (await database).rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+  }
+
+  /// Closes the connection; the next [database] access reopens the file from disk.
+  @override
+  Future<void> close() async {
+    final db = _database;
+    _database = null;
+    await db?.close();
+  }
+
   // [YENİ] Veritabanı bağlantısını fiziksel olarak kapatıp RAM'den temizler ve baştan açar.
   Future<Database> resetDatabase() async {
     if (_database != null) {
       await _database!.close();
       _database = null;
     }
-    AppLog.info('Database connection reset manually (Cloud Restore).', domain: 'DATABASE');
+    AppLog.info(
+      'Database connection reset manually (Cloud Restore).',
+      domain: 'DATABASE',
+    );
     return await database; // Yeniden init edilmesini tetikler
   }
 
   Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, DbConstants.dbName);
-
     return await openDatabase(
-      path,
+      await path,
       version: _dbVersion,
       onCreate: (db, version) async {
         AppLog.insight('db_created', metadata: {'version': version});
@@ -81,7 +100,10 @@ class LocalDatabase {
         await _createIndexes(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        AppLog.insight('db_upgraded', metadata: {'from': oldVersion, 'to': newVersion});
+        AppLog.insight(
+          'db_upgraded',
+          metadata: {'from': oldVersion, 'to': newVersion},
+        );
 
         if (oldVersion < 2) {
           // 1. ADIM: ASSETS TABLOSU GÖÇÜ
@@ -101,7 +123,9 @@ class LocalDatabase {
             FROM ${DbConstants.tableAssets}
           ''');
           await db.execute('DROP TABLE ${DbConstants.tableAssets}');
-          await db.execute('ALTER TABLE assets_new RENAME TO ${DbConstants.tableAssets}');
+          await db.execute(
+            'ALTER TABLE assets_new RENAME TO ${DbConstants.tableAssets}',
+          );
 
           // 2. ADIM: TRANSACTIONS TABLOSU GÖÇÜ
           await db.execute('''
@@ -123,7 +147,9 @@ class LocalDatabase {
             FROM ${DbConstants.tableTransactions}
           ''');
           await db.execute('DROP TABLE ${DbConstants.tableTransactions}');
-          await db.execute('ALTER TABLE transactions_new RENAME TO ${DbConstants.tableTransactions}');
+          await db.execute(
+            'ALTER TABLE transactions_new RENAME TO ${DbConstants.tableTransactions}',
+          );
 
           // 3. ADIM: ALLOCATIONS TABLOSU GÖÇÜ
           await db.execute('''
@@ -142,7 +168,9 @@ class LocalDatabase {
             FROM ${DbConstants.tableAllocations}
           ''');
           await db.execute('DROP TABLE ${DbConstants.tableAllocations}');
-          await db.execute('ALTER TABLE allocations_new RENAME TO ${DbConstants.tableAllocations}');
+          await db.execute(
+            'ALTER TABLE allocations_new RENAME TO ${DbConstants.tableAllocations}',
+          );
         }
 
         if (oldVersion < 3) {
@@ -157,13 +185,13 @@ class LocalDatabase {
 
   Future<void> _createIndexes(Database db) async {
     await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_transactions_asset_id ON ${DbConstants.tableTransactions}(${DbConstants.colAssetId})'
+      'CREATE INDEX IF NOT EXISTS idx_transactions_asset_id ON ${DbConstants.tableTransactions}(${DbConstants.colAssetId})',
     );
     await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_allocations_sell_tx_id ON ${DbConstants.tableAllocations}(${DbConstants.colSellTxId})'
+      'CREATE INDEX IF NOT EXISTS idx_allocations_sell_tx_id ON ${DbConstants.tableAllocations}(${DbConstants.colSellTxId})',
     );
     await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_allocations_buy_tx_id ON ${DbConstants.tableAllocations}(${DbConstants.colBuyTxId})'
+      'CREATE INDEX IF NOT EXISTS idx_allocations_buy_tx_id ON ${DbConstants.tableAllocations}(${DbConstants.colBuyTxId})',
     );
   }
 }

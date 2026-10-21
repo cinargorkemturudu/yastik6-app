@@ -5,8 +5,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:icloud_storage/icloud_storage.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import 'package:yastik_alti/data/local/db_constants.dart';
 
 import '../../core/crypto_service.dart';
@@ -14,7 +12,8 @@ import '../../core/env.dart';
 
 abstract class CloudBackupStrategy {
   Future<bool> backupDatabase(File backupFile); // İMZA GÜNCELLENDİ
-  Future<bool> restoreDatabase();
+  /// Downloads the backup to [destinationPath]; never writes to the live database.
+  Future<void> downloadBackup(String destinationPath);
   Future<GoogleSignInAccount?> signIn();
   Future<void> signOut();
 }
@@ -87,7 +86,7 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
   }
 
   @override
-  Future<bool> restoreDatabase() async {
+  Future<void> downloadBackup(String destinationPath) async {
     final account = await signIn();
     if (account == null) throw Exception("Google Girişi başarısız oldu.");
 
@@ -115,19 +114,13 @@ class GoogleDriveBackupStrategy implements CloudBackupStrategy {
         downloadOptions: drive.DownloadOptions.fullMedia,
       ) as drive.Media;
 
-      final dbFolder = await getDatabasesPath();
-      final dbPath = join(dbFolder, DbConstants.dbName);
-      final dbFile = File(dbPath);
-
       final List<int> dataStore = [];
       await for (final data in media.stream) {
         dataStore.addAll(data);
       }
-      // Şifreli haliyle doğrudan veritabanı yoluna yazıyoruz, servis bunu alıp çözecek.
-      await dbFile.writeAsBytes(dataStore, flush: true);
+      await File(destinationPath).writeAsBytes(dataStore, flush: true);
 
-      debugPrint("Google Drive Geri yükleme Başarılı!");
-      return true;
+      debugPrint("Google Drive yedeği indirildi.");
     } catch (e) {
       throw Exception("Drive İndirme Hatası: $e");
     }
@@ -175,23 +168,20 @@ class ICloudBackupStrategy implements CloudBackupStrategy {
   }
 
   @override
-  Future<bool> restoreDatabase() async {
+  Future<void> downloadBackup(String destinationPath) async {
     try {
-      final dbFolder = await getDatabasesPath();
-      final dbPath = join(dbFolder, DbConstants.dbName);
       final cloudFileName = 'yastik6_backup_${DbConstants.dbName}';
 
       await ICloudStorage.download(
         containerId: _containerId,
         relativePath: cloudFileName,
-        destinationFilePath: dbPath,
+        destinationFilePath: destinationPath,
         onProgress: (stream) {
           stream.listen((progress) => debugPrint('iCloud İndiriliyor: %$progress'));
         },
       );
 
-      debugPrint("iCloud Geri yükleme Başarılı!");
-      return true;
+      debugPrint("iCloud yedeği indirildi.");
     } catch (e) {
       throw Exception("iCloud İndirme Hatası: $e");
     }
@@ -204,62 +194,86 @@ class ICloudBackupStrategy implements CloudBackupStrategy {
   Future<void> signOut() async {}
 }
 
+/// The parts of the local database that backup/restore needs; [LocalDatabase] in the app, a fake in tests.
+abstract class BackupDatabaseFile {
+  Future<String> get path;
+  Future<void> checkpoint();
+  Future<void> close();
+}
+
+/// The downloaded file decrypted fine but is not a SQLite database.
+class InvalidBackupContentException implements Exception {
+  const InvalidBackupContentException();
+}
+
 class CloudBackupService {
+  static final List<int> _sqliteHeader = 'SQLite format 3\u0000'.codeUnits;
+
   final CloudBackupStrategy _strategy;
   final CryptoService _cryptoService;
+  final BackupDatabaseFile _database;
 
-  CloudBackupService({required CryptoService crypto})
+  CloudBackupService({required CryptoService crypto, required BackupDatabaseFile database, CloudBackupStrategy? strategy})
       : _cryptoService = crypto,
-        _strategy = Platform.isIOS ? ICloudBackupStrategy() : GoogleDriveBackupStrategy();
+        _database = database,
+        _strategy = strategy ?? (Platform.isIOS ? ICloudBackupStrategy() : GoogleDriveBackupStrategy());
 
-  Future<bool> backupDatabase() async {
-    final dbFolder = await getDatabasesPath();
-    final dbPath = join(dbFolder, DbConstants.dbName);
+  Future<bool> backupDatabase(String passphrase) async {
+    final dbPath = await _database.path;
     final dbFile = File(dbPath);
 
     if (!await dbFile.exists()) {
       throw Exception("Yerel veritabanı bulunamadı. Lütfen önce uygulamaya bir işlem ekleyin.");
     }
 
-    // 1. Oku ve Şifrele
+    // 1. Make sure the file on disk holds every committed write, then read and encrypt it
+    await _database.checkpoint();
     final rawBytes = await dbFile.readAsBytes();
-    final encryptedPayload = _cryptoService.encryptBytes(rawBytes);
+    final encryptedPayload = await _cryptoService.encryptBackup(rawBytes, passphrase);
 
-    // 2. Şifreli veriyi geçici bir dosyaya yaz (Ek paket kurmamak için aynı dizini kullanıyoruz)
-    final tempEncryptedFile = File(join(dbFolder, '${DbConstants.dbName}.enc'));
-    await tempEncryptedFile.writeAsString(encryptedPayload);
-
-    // 3. Stratejiye ver, buluta yüklesin
-    final success = await _strategy.backupDatabase(tempEncryptedFile);
-
-    // 4. Çöpü temizle (Şifreli geçici dosyayı sil)
-    if (await tempEncryptedFile.exists()) {
-      await tempEncryptedFile.delete();
+    // 2. Upload the encrypted copy from a temp file, and always clean it up
+    final tempEncryptedFile = File('$dbPath.enc');
+    try {
+      await tempEncryptedFile.writeAsBytes(encryptedPayload, flush: true);
+      return await _strategy.backupDatabase(tempEncryptedFile);
+    } finally {
+      if (await tempEncryptedFile.exists()) await tempEncryptedFile.delete();
     }
-
-    return success;
   }
 
-  Future<bool> restoreDatabase() async {
-    // 1. Strateji veriyi indirip dbFile konumuna yazar (Şu an şifreli halde)
-    final success = await _strategy.restoreDatabase();
-    if (!success) return false;
+  /// Replaces the local database with the cloud backup. Everything that can fail (download,
+  /// wrong passphrase, corrupted file) happens before the live database is touched, so a
+  /// failed restore leaves the current portfolio exactly as it was.
+  Future<void> restoreDatabase(String passphrase) async {
+    final dbPath = await _database.path;
+    final downloaded = File('$dbPath.download');
+    final restored = File('$dbPath.restore');
 
-    final dbFolder = await getDatabasesPath();
-    final dbPath = join(dbFolder, DbConstants.dbName);
-    final dbFile = File(dbPath);
+    try {
+      await _strategy.downloadBackup(downloaded.path);
+      final plain = await _cryptoService.decryptBackup(await downloaded.readAsBytes(), passphrase);
+      if (!_isSqliteFile(plain)) throw const InvalidBackupContentException();
+      await restored.writeAsBytes(plain, flush: true);
 
-    if (await dbFile.exists()) {
-      // 2. Şifreli veriyi oku
-      final encryptedContent = await dbFile.readAsString();
-
-      // 3. Şifreyi çöz
-      final decryptedBytes = _cryptoService.decryptToBytes(encryptedContent);
-
-      // 4. Saf ve kullanılabilir veritabanını yerine yaz
-      await dbFile.writeAsBytes(decryptedBytes, flush: true);
+      // Only now swap it in: close the connection, replace the file, drop the old journal files
+      await _database.close();
+      await restored.rename(dbPath);
+      for (final suffix in const ['-wal', '-shm', '-journal']) {
+        final sidecar = File('$dbPath$suffix');
+        if (await sidecar.exists()) await sidecar.delete();
+      }
+    } finally {
+      for (final temp in [downloaded, restored]) {
+        if (await temp.exists()) await temp.delete();
+      }
     }
+  }
 
+  bool _isSqliteFile(List<int> bytes) {
+    if (bytes.length < _sqliteHeader.length) return false;
+    for (var i = 0; i < _sqliteHeader.length; i++) {
+      if (bytes[i] != _sqliteHeader[i]) return false;
+    }
     return true;
   }
 

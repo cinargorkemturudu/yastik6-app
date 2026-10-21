@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yastik_alti/core/app_log.dart';
+import 'package:yastik_alti/core/crypto_service.dart';
 import 'package:yastik_alti/data/local/local_database.dart';
 import 'package:yastik_alti/domain/services/cloud_backup_service.dart';
 import 'package:yastik_alti/ui/states/portfolio_provider.dart';
@@ -43,12 +44,12 @@ class CloudBackupController extends StateNotifier<CloudBackupState> {
     : super(CloudBackupState());
 
   /// Veritabanını buluta yedekler
-  Future<void> backup() async {
+  Future<void> backup(String passphrase) async {
     AppLog.debug('Cloud backup started', domain: 'BACKUP');
     state = state.copyWith(isLoading: true, isSuccess: false, clearError: true);
 
     try {
-      final success = await _backupService.backupDatabase();
+      final success = await _backupService.backupDatabase(passphrase);
       if (success) {
         AppLog.insight('cloud_backup_success');
         state = state.copyWith(isLoading: false, isSuccess: true);
@@ -67,43 +68,37 @@ class CloudBackupController extends StateNotifier<CloudBackupState> {
   }
 
   /// Buluttaki yedeği cihaza geri yükler
-  Future<void> restore() async {
+  Future<void> restore(String passphrase) async {
     AppLog.debug('Cloud restore started', domain: 'BACKUP');
     state = state.copyWith(isLoading: true, isSuccess: false, clearError: true);
 
+    String? error;
     try {
-      final success = await _backupService.restoreDatabase();
-
-      if (success) {
-        // --- [HOT SWAP İŞLEMİ BAŞLIYOR] ---
-
-        // 1. Eski bağlantıyı kapat ve indirilen yeni dosyadan taze bir bağlantı al
-        final newDb = await LocalDatabase.instance.resetDatabase();
-
-        // 2. Global StateProvider'ı yeni DB nesnesiyle güncelle (Bütün Repolar baştan yazılır)
-        _ref.read(databaseProvider.notifier).state = newDb;
-
-        // 3. Portföy motoruna veritabanının değiştiğini haber ver (UI yeniden çizilir)
-        _ref.read(portfolioProvider.notifier).refreshDb();
-        AppLog.info(
-          'Restored database swapped in, portfolio state refreshed',
-          domain: 'BACKUP',
-        );
-
-        // 4. İşlemi başarıyla sonlandır
-        AppLog.insight('cloud_restore_success');
-        state = state.copyWith(isLoading: false, isSuccess: true);
-      } else {
-        AppLog.warning('Cloud restore did not complete', domain: 'BACKUP');
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage:
-              "Geri yükleme başarısız oldu. Bulutta yedek dosyası bulunamadı.",
-        );
-      }
+      await _backupService.restoreDatabase(passphrase);
+    } on BackupDecryptionException {
+      error = "Parola yanlış ya da yedek dosyası bozuk. Cihazdaki verileriniz değiştirilmedi.";
+    } on InvalidBackupContentException {
+      error = "Bu dosya geçerli bir Yastık6 yedeği değil. Cihazdaki verileriniz değiştirilmedi.";
+    } on FormatException {
+      error = "Bu dosya geçerli bir Yastık6 yedeği değil. Cihazdaki verileriniz değiştirilmedi.";
     } catch (e) {
-      AppLog.error('Cloud restore failed', domain: 'BACKUP', error: e);
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      error = e.toString();
+    }
+
+    // --- [HOT SWAP] ---
+    // Always reopen: after a successful restore this loads the new file, and if anything failed
+    // the connection may already be closed, so the app must not keep using it.
+    final newDb = await LocalDatabase.instance.resetDatabase();
+    _ref.read(databaseProvider.notifier).state = newDb;
+    _ref.read(portfolioProvider.notifier).refreshDb();
+
+    if (error == null) {
+      AppLog.info('Restored database swapped in, portfolio state refreshed', domain: 'BACKUP');
+      AppLog.insight('cloud_restore_success');
+      state = state.copyWith(isLoading: false, isSuccess: true);
+    } else {
+      AppLog.warning('Cloud restore failed: $error', domain: 'BACKUP');
+      state = state.copyWith(isLoading: false, errorMessage: error);
     }
   }
 
