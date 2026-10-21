@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:sqflite/sqflite.dart';
@@ -29,6 +30,7 @@ import 'package:yastik_alti/domain/services/price_service.dart';
 import '../core/crypto_service.dart';
 import '../core/env.dart';
 import '../data/local/local_database.dart';
+import '../data/remote/cloud_backup_strategies.dart';
 import '../data/local/market_cache_local.data.dart';
 import '../domain/services/cloud_backup_service.dart';
 
@@ -56,10 +58,7 @@ final remoteHaremDataProvider = Provider<RemoteMarketData>((ref) {
   final client = ref.watch(httpClientProvider);
   final baseUrl = ref.watch(baseUrlProvider);
 
-  return RemoteMarketData(
-    client: client,
-    baseUrl: baseUrl,
-  );
+  return RemoteMarketData(client: client, baseUrl: baseUrl);
 });
 
 final assetLocalDataProvider = Provider((ref) => AssetLocalData());
@@ -98,7 +97,13 @@ final transactionRepoProvider = Provider<TransactionIRepository>((ref) {
 
 final cloudBackupServiceProvider = Provider<CloudBackupService>((ref) {
   final crypto = ref.watch(cryptoServiceProvider); // Inject edildi
-  return CloudBackupService(crypto: crypto, database: LocalDatabase.instance);
+  return CloudBackupService(
+    crypto: crypto,
+    database: LocalDatabase.instance,
+    strategy: Platform.isIOS
+        ? ICloudBackupStrategy()
+        : GoogleDriveBackupStrategy(),
+  );
 });
 
 final priceServiceProvider = Provider<PriceService>((ref) {
