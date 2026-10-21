@@ -28,6 +28,7 @@ import 'package:yastik_alti/domain/services/price_service.dart';
 
 import '../core/crypto_service.dart';
 import '../core/env.dart';
+import '../data/local/local_database.dart';
 import '../data/local/market_cache_local.data.dart';
 import '../domain/services/cloud_backup_service.dart';
 
@@ -97,7 +98,7 @@ final transactionRepoProvider = Provider<TransactionIRepository>((ref) {
 
 final cloudBackupServiceProvider = Provider<CloudBackupService>((ref) {
   final crypto = ref.watch(cryptoServiceProvider); // Inject edildi
-  return CloudBackupService(crypto: crypto);
+  return CloudBackupService(crypto: crypto, database: LocalDatabase.instance);
 });
 
 final priceServiceProvider = Provider<PriceService>((ref) {

@@ -12,6 +12,7 @@ import 'package:yastik_alti/ui/theme/app_text_style.dart';
 import 'package:yastik_alti/ui/theme/app_dimens.dart';
 import 'package:yastik_alti/ui/widgets/ticker_settings_sheet.dart';
 import 'package:yastik_alti/ui/states/cloud_backup_controller.dart';
+import 'package:yastik_alti/ui/widgets/backup_passphrase_dialog.dart';
 
 class RootScreen extends ConsumerStatefulWidget {
   const RootScreen({super.key});
@@ -89,9 +90,12 @@ class _RootScreenState extends ConsumerState<RootScreen> {
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.cloud_upload_outlined, color: AppColors.brandBlue),
                 title: Text("Yedekle", style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  cloudNotifier.backup();
+                  final passphrase = await BackupPassphraseDialog.show(context, isRestore: false);
+                  if (passphrase != null) {
+                    cloudNotifier.backup(passphrase);
+                  }
                 },
               ),
               ListTile(
@@ -100,9 +104,9 @@ class _RootScreenState extends ConsumerState<RootScreen> {
                 title: Text("Geri Yükle", style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                 onTap: () async {
                   Navigator.pop(context);
-                  final confirm = await _showRestoreDialog();
-                  if (confirm == true) {
-                    cloudNotifier.restore();
+                  final passphrase = await BackupPassphraseDialog.show(context, isRestore: true);
+                  if (passphrase != null) {
+                    cloudNotifier.restore(passphrase);
                   }
                 },
               ),
@@ -155,20 +159,6 @@ class _RootScreenState extends ConsumerState<RootScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Future<bool?> _showRestoreDialog() {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Verileri Geri Yükle?"),
-        content: const Text("Buluttaki yedeğiniz indirilecek ve cihazdaki mevcut verilerinizin üzerine yazılacaktır. Bu işlem geri alınamaz."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("İptal")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Geri Yükle", style: TextStyle(color: AppColors.lossAccent))),
-        ],
       ),
     );
   }
