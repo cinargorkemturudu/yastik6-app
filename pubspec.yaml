@@ -16,25 +16,25 @@ dependencies:
   fl_chart: ^0.68.0
   google_fonts: ^6.1.0
   cupertino_icons: ^1.0.8
-  sqflite: ^2.4.2
+  sqflite: ^2.4.6
   path: ^1.9.0
   http: ^1.2.0
-  uuid: ^4.5.2
-  intl: ^0.20.2
+  uuid: ^4.6.0
+  intl: ^0.20.3
   flutter_riverpod: ^2.5.1
   envied: ^1.3.3
   circle_flags: ^5.0.1
   flutter_material_design_icons: ^3.1.0+7447
-  shared_preferences: ^2.5.5
+  shared_preferences: ^2.5.6
   decimal: ^3.2.4
   collection: ^1.19.1
   google_sign_in: ^7.2.0
   googleapis: ^16.0.0
-  googleapis_auth: ^2.0.0
+  googleapis_auth: ^2.3.7
   icloud_storage: ^2.2.0
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
   pointycastle: ^3.9.1
-  flutter_svg: ^2.3.0
+  flutter_svg: ^2.5.0
   
 dev_dependencies:
   flutter_test:
@@ -43,7 +43,7 @@ dev_dependencies:
   
   flutter_lints: ^6.0.0
   envied_generator: ^1.3.3
-  build_runner: ^2.12.2
+  build_runner: ^2.16.2
   change_app_package_name: ^1.5.0
 
 
