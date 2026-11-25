@@ -33,7 +33,7 @@ dependencies:
   googleapis_auth: ^2.0.0
   icloud_storage: ^2.2.0
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
-  pointycastle: ^3.9.1
+  pointycastle: ^4.0.0
   flutter_svg: ^2.3.0
   
 dev_dependencies:
