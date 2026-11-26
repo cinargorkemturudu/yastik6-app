@@ -8,6 +8,16 @@ A local-first Flutter app for tracking a gold / currency / crypto portfolio. Hol
 
 **Demo video:** [Yastık6 – Portfolio tracker demo](https://youtu.be/JhnMPA0rF7U) · **Backend:** [yastik6-backend](https://github.com/cinargorkemturudu/yastik6-backend) · **Project story:** [Portfolio showcase](https://github.com/cinargorkemturudu/Yastik6-Portfolio-Showcase)
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/portfolio.png" width="240" alt="Portfolio overview with allocation donut and recent transactions">
+  <img src="docs/screenshots/market.png" width="240" alt="Live markets list with category tabs">
+  <img src="docs/screenshots/converter.png" width="240" alt="Asset converter with opportunity-cost analysis">
+</p>
+
+<sub>Sample holdings, live prices from the production API. The UI is in Turkish.</sub>
+
 ![Architecture](docs/architecture.png)
 
 ## Stack
