@@ -1,6 +1,14 @@
 # Yastık6
 
+[![Flutter Tests](https://github.com/cinargorkemturudu/Yastik6-Frontend/actions/workflows/flutter-test.yml/badge.svg)](https://github.com/cinargorkemturudu/Yastik6-Frontend/actions/workflows/flutter-test.yml)
+![Flutter](https://img.shields.io/badge/Flutter-stable-02569B)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 A local-first Flutter app for tracking a gold / currency / crypto portfolio. Holdings, transactions, and P&L live in an on-device SQLite database; the backend API is only used to refresh live market prices.
+
+**Demo video:** [Yastık6 – Portfolio tracker demo](https://youtu.be/JhnMPA0rF7U) · **Backend:** [Isolated-Backend-Yastik6](https://github.com/cinargorkemturudu/Isolated-Backend-Yastik6) · **Project story:** [Portfolio showcase](https://github.com/cinargorkemturudu/Yastik6-Portfolio-Showcase)
+
+![Architecture](docs/architecture.png)
 
 ## Stack
 
@@ -30,13 +38,13 @@ Requires the Flutter SDK (stable channel).
 flutter pub get
 ```
 
-There's no `.env.example` in this repo — create `frontend/.env` yourself with:
+Copy the template and fill it in:
 
+```bash
+cp .env.example .env
 ```
-YASTIK6_API_KEY=<must match the backend's ApiSettings__MobileClientKey>
-BASE_URL=https://yastik6.net
-GOOGLE_DRIVE_CLIENT_ID=<your Google OAuth client id, for cloud backup>
-```
+
+`YASTIK6_API_KEY` must match the backend's `ApiSettings__MobileClientKey`. `GOOGLE_DRIVE_CLIENT_ID` is only needed for cloud backup. To try the app without the production API, run the backend locally (see its README) and point `BASE_URL` at it.
 
 Then generate the obfuscated env bindings (required after every `.env` change):
 

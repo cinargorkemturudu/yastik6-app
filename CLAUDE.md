@@ -15,7 +15,7 @@ Flutter/Dart app (`yastik_alti`), SDK `^3.10.1`. Local-first: sqflite is the pri
 - Format: `dart format .`
 - Test: `flutter test`
 
-`test/` has unit tests (`AppFormatter`, `PortfolioValuator`) and widget tests (`AppSafeText`, `AppOutlinedCard`). `flutter test` also runs in CI on every push/PR to `main` (`.github/workflows/flutter-test.yml`). Write tests for new logic going forward.
+`test/` has unit tests (formatting, portfolio valuation and mapping, crypto, cloud backup) and widget tests (`AppSafeText`, `AppOutlinedCard`). `flutter test` also runs in CI on every push/PR to `main` (`.github/workflows/flutter-test.yml`). Write tests for new logic going forward.
 
 ## State management: Riverpod
 
@@ -32,8 +32,8 @@ Layered: `domain` (models/entities/value objects, repository interfaces) → `da
 `.env` defines `YASTIK6_API_KEY`, `BASE_URL`, `GOOGLE_DRIVE_CLIENT_ID`. These are embedded at compile time via `envied` into `lib/core/env.g.dart` (obfuscated, generated, gitignored).
 
 - **After editing `.env`, you must rerun `dart run build_runner build --delete-conflicting-outputs`** — otherwise the app keeps using the stale previously-generated values.
-- Both `.env` and `lib/core/env.g.dart` are gitignored. On a fresh clone, neither exists — you must recreate `.env` (there's no `.env.example` here to copy from; check the backend's for the matching key format) and run the codegen before the app will build.
+- Both `.env` and `lib/core/env.g.dart` are gitignored. On a fresh clone, neither exists — you must recreate `.env` (see the README for the template; `YASTIK6_API_KEY` must match the backend's `ApiSettings__MobileClientKey`) and run the codegen before the app will build.
 
 ## Local backend for full-stack dev
 
-`BASE_URL` defaults to production (`https://yastik6.net`) — running the app as-is does not hit a local backend. To point it at a locally running backend (`dotnet run` in `backend/`, listening on `http://0.0.0.0:5179`), set `BASE_URL=http://localhost:5179` in `.env` and rerun the `build_runner` codegen above. The `/use-local-backend` skill automates this.
+`BASE_URL` defaults to production (`https://yastik6.net`) — running the app as-is does not hit a local backend. To point it at a locally running backend (`dotnet run` in `backend/`, listening on `http://0.0.0.0:5179`), set `BASE_URL=http://localhost:5179` in `.env` and rerun the `build_runner` codegen above.
